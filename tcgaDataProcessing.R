@@ -58,4 +58,18 @@ j1<-join(analyte_nr,aliquot_nr,by="bcr_analyte_barcode")
 #2 add bioportion barcode to j1 and join with bioportion
 #portion: TCGA-3L-AA1B-01A-11 ; analyte: TCGA-3L-AA1B-01A-11
 j1<-j1 %>% mutate(bcr_portion_barcode=substr(bcr_analyte_barcode,1,nchar(as.character(bcr_analyte_barcode))-1))
+j2<-join(j1,portion_nr,by="bcr_portion_barcode")
 
+#3 add biosample barcode to j2
+#sample: TCGA-3L-AA1B-01A ; portion: TCGA-3L-AA1B-01A-11
+j2<-j2 %>% mutate(bcr_sample_barcode=substr(bcr_portion_barcode,1,nchar(as.character(bcr_portion_barcode))-3))
+j3<-join(j2,samp_nr,by="bcr_sample_barcode")
+
+#finally join by biopatient
+j4<-join(j3,bio_patient_nr,by="bcr_patient_barcode")
+
+
+#download clinical data
+queryC <- GDCquery(project = "TCGA-COAD",  data.category = "Clinical", file.type = "xml")
+GDCdownload(queryC)
+drug<-GDCprepare_clinic(queryC, clinical.info = "drug")
