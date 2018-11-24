@@ -10,8 +10,9 @@ query <- GDCquery(project = "TCGA-CHOL",  data.category = "Clinical", file.type 
 GDCdownload(query)
 clinical <- GDCprepare_clinic(query, clinical.info = "patient")
 
-queryB <- GDCquery(project = "TCGA-COAD",  data.category = "Biospecimen", file.type = "xml")
-GDCdownload(queryB)
+#queryB <- GDCquery(project = "TCGA-COAD",  data.category = "Biospecimen", file.type = "xml")
+queryB <- GDCquery(project = "TCGA-BRCA",  data.category = "Biospecimen", file.type = "xml")
+GDCdownload(queryB,method = "client")
 
 aliquot <- GDCprepare_clinic(queryB, clinical.info = c("aliquot"))
 sample <- GDCprepare_clinic(queryB, clinical.info = c("sample"))
@@ -79,4 +80,16 @@ radiation<-GDCprepare_clinic(queryC, clinical.info = "radiation")
 patient<-GDCprepare_clinic(queryC, clinical.info = "patient")
 stage_event<-GDCprepare_clinic(queryC, clinical.info = "stage_event")
 new_tumor_event<-GDCprepare_clinic(queryC, clinical.info = "new_tumor_event")
+
+
+admin_nr<-distinct(admin)
+patient_nr<-distinct(patient)
+
+j5<-join(j4,patient_nr,by="bcr_patient_barcode")
+
+
+
+
+#keep only selected columns
+
 
