@@ -117,7 +117,7 @@ expand<-function(df,colName){
     }
     #change colnames so they are unique
     colnames(tempdf)<-paste(paste(colName,".",sep = ""),colnames(tempdf),sep = "")
-    print(paste(i,colnames(tempdf)))
+    #print(paste(i,colnames(tempdf)))
     
     newRow<-cbind(thisRow,tempdf)
     res<-bind_rows(res,newRow)
@@ -131,14 +131,18 @@ expand<-function(df,colName){
   
 }
 res<-NULL
-sampdfExbrnew<-expand(sampdf,"portions")
+sampdfExbrnew<-expand(biospecimenBRCA,"portions")
 
 sampdfExanalyte<-expand(sampdfExbrnew,"portions.analytes")
 
 sampdfExaliquot<-expand(sampdfExanalyte,"portions.analytes.aliquots")
 
+#add patient barcode to biospecimen data
+brcaTabRNA<- brcaTabRNA %>% mutate(bcr_patient_barcode=substr(submitter_id,1,nchar(as.character(submitter_id))-4))
 
+#join clinical and biospecimen
 
+brcaJoinedRNA<-join(clinicalBRCA,brcaTabRNA,by="bcr_patient_barcode")
 
 
 
