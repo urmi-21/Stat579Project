@@ -10,7 +10,7 @@ query <- GDCquery(project = "TCGA-CHOL",  data.category = "Clinical", file.type 
 GDCdownload(query)
 clinical <- GDCprepare_clinic(query, clinical.info = "patient")
 
-#queryB <- GDCquery(project = "TCGA-COAD",  data.category = "Biospecimen", file.type = "xml")
+queryB <- GDCquery(project = "TCGA-COAD",  data.category = "Biospecimen", file.type = "xml")
 queryB <- GDCquery(project = "TCGA-BRCA",  data.category = "Biospecimen", file.type = "xml")
 GDCdownload(queryB,method = "client")
 
@@ -91,5 +91,54 @@ j5<-join(j4,patient_nr,by="bcr_patient_barcode")
 
 
 #keep only selected columns
+
+
+
+#other method
+clinicalBRCA <- GDCquery_clinic(project = "TCGA-BRCA", type = "clinical")
+biospecimenBRCA <- GDCquery_clinic(project = "TCGA-BRCA", type = "Biospecimen")
+biospecimenCOAD <- GDCquery_clinic(project = "TCGA-COAD", type = "Biospecimen")
+
+sampdf<-head(biospecimenCOAD,10)[,c("sample_type_id","tumor_code_id","sample_id","submitter_id","portions")]
+sampPor<-as.data.frame(sampdf[2,  c("portions")])
+
+#use apply to unlist columns
+#Function takes a df and expands it by unlisting elements at a column
+expand<-function(df,colName){
+  
+  res<-data.frame()
+  #for each row
+  for(i in 1: dim(df)[1]){
+    thisRow<-df[i, ! (colnames(df) %in% c(colName))]
+    tempdf<-as.data.frame(df[i, c(colName)])
+    #if list is empty skip that row
+    if(dim(tempdf)[1]<1){
+      next
+    }
+    #change colnames so they are unique
+    colnames(tempdf)<-paste(paste(colName,".",sep = ""),colnames(tempdf),sep = "")
+    print(paste(i,colnames(tempdf)))
+    
+    newRow<-cbind(thisRow,tempdf)
+    res<-bind_rows(res,newRow)
+    #for(j in 1: dim(tempdf)[1]){
+      #convert to dataframe in case there is only single column
+     #res<-bind_rows(res,newRow)
+    #}
+  }
+  #print(res)
+  return(res)
+  
+}
+res<-NULL
+sampdfExbrnew<-expand(sampdf,"portions")
+
+sampdfExanalyte<-expand(sampdfExbrnew,"portions.analytes")
+
+sampdfExaliquot<-expand(sampdfExanalyte,"portions.analytes.aliquots")
+
+
+
+
 
 
