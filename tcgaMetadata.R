@@ -49,9 +49,8 @@ getjoinedBiospcClinc<-function(projName){
 ##########################End Functions##########################################
 
 tcgaProjList<-c("")
+#download and merge BRCA metadata
 BRCAMetadata<-getjoinedBiospcClinc("TCGA-BRCA")
-
-
 
 
 
