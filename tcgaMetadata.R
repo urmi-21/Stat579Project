@@ -51,7 +51,16 @@ getjoinedBiospcClinc<-function(projName){
 #download and merge BRCA metadata
 BRCAMetadata<-getjoinedBiospcClinc("TCGA-BRCA")
 clinical <- GDCquery_clinic(project = "TCGA-UCS", type = "clinical")
+#which columns are all na
+naCols<-colnames(BRCAMetadata)[sapply(BRCAMetadata, function(x)all(is.na(x)))]
+BRCAMetadata<-BRCAMetadata[,!(colnames(BRCAMetadata) %in% naCols)]
 
+#filter to keep only RNA samples
+BRCAMetadata<-BRCAMetadata%>%filter(portions.analytes.analyte_type_id == "R")
+
+ggplot(data=BRCAMetadata,aes(fill=race))+geom_bar(aes(x=primary_diagnosis))+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_y_log10()
+
+#download metadata for all projs                          
 tcgaProjList<-c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-UCEC","TCGA-UCS","TCGA-READ","TCGA-COAD","TCGA-LIHC","TCGA-HNSC","TCGA-ESCA","TCGA-PRAD","TCGA-STAD","TCGA-THCA","TCGA-LUAD","TCGA-LUSC","TCGA-KIRC","TCGA-KIRP","TCGA-KICH")
 
 #mdList will have all data frames for rcgaProjList
