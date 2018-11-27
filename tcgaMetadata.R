@@ -32,7 +32,7 @@ expand<-function(df,colName){
 }
 
 getjoinedBiospcClinc<-function(projName){
-  clinicalBRCA <- GDCquery_clinic(project = projName, type = "clinical")
+  clinicalBRCA <- GDCquery_clinic(project = projName, type = "clinical") 
   biospecimenBRCA <- GDCquery_clinic(project = projName, type = "Biospecimen")
   #expand biospecimen data in the order portions, portions.analytes, portions.analytes.aliquots
   toUnpack<-c("portions", "portions.analytes", "portions.analytes.aliquots")
