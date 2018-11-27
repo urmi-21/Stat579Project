@@ -48,11 +48,17 @@ getjoinedBiospcClinc<-function(projName){
 
 ##########################End Functions##########################################
 
-tcgaProjList<-c("")
 #download and merge BRCA metadata
 BRCAMetadata<-getjoinedBiospcClinc("TCGA-BRCA")
+clinical <- GDCquery_clinic(project = "TCGA-UCS", type = "clinical")
 
+tcgaProjList<-c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-UCEC","TCGA-UCS","TCGA-READ","TCGA-COAD","TCGA-LIHC","TCGA-HNSC","TCGA-ESCA","TCGA-PRAD","TCGA-STAD","TCGA-THCA","TCGA-LUAD","TCGA-LUSC","TCGA-KIRC","TCGA-KIRP","TCGA-KICH")
 
+#mdList will have all data frames for rcgaProjList
+mdList<-c()
+for(s in tcgaProjList){
+  mdList<-c(mdList,getjoinedBiospcClinc(s))
+}
 
 
 
