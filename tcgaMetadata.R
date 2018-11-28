@@ -1,11 +1,15 @@
-library(TCGAbiolinks)
+
 library(dplyr)
 library(DT)
 library(plyr)
 library(data.table)
+library(maftools)
+library("readr")
+library(TCGAbiolinks)
 packageVersion("TCGAbiolinks")
-setwd("~/Downloads/RNAseqDB/RNAseqDB/data/tcgaMD")
+
 #######################################################################################
+colsToKeep<-c("clinical.submitter_id","clinical.classification_of_tumor","clinical.primary_diagnosis","clinical.tumor_stage","clinical.age_at_diagnosis","clinical.vital_status","clinical.days_to_death","clinical.tissue_or_organ_of_origin","clinical.days_to_birth","clinical.site_of_resection_or_biopsy","clinical.days_to_last_follow_up","clinical.cigarettes_per_day","clinical.weight","clinical.alcohol_history","clinical.bmi","clinical.years_smoked","clinical.height","clinical.gender","clinical.year_of_birth","clinical.race","clinical.ethnicity","clinical.year_of_death","clinical.bcr_patient_barcode","clinical.disease","submitter_id","sample_type","tissue_type","portions.submitter_id","portions.analytes.analyte_type","portions.analytes.submitter_id","portions.analytes.analyte_type_id","portions.analytes.aliquots.analyte_type","portions.analytes.aliquots.submitter_id")
 #Function takes a df and expands it by unlisting elements at a column
 expand<-function(df,colName){
   res<-data.frame()
@@ -143,4 +147,40 @@ extraCols<-setdiff(cnCESC,cnUCS)
 temp<-cescJ[,setdiff(cnCESC,cnUCS)]
 
 joined<-bind_rows(ucsJ,cescJ)
+
+
+##Download only BRCA metadata
+brcaDF<-getjoinedBiospcClinc("TCGA-BRCA")
+brcaDF<-brcaDF[,colsToKeep]
+#remove cols with all NA values
+naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
+brcaDFNONA<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
+#keep rows with RNA samples only
+brcaDFRNA<-brcaDFNONA%>%filter(portions.analytes.analyte_type_id == "R")
+
+write.csv(brcaDFNONA,"TCGAbrcaMetadata_reduced.csv",row.names = F)
+
+##download gene mutation metadata
+brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
+normalSampList<-brcaDF%>% filter(sample_type=="Solid Tissue Normal") %>% select(portions.analytes.aliquots.submitter_id)
+
+maf_norm<-brcaMAF %>% filter(Tumor_Sample_Barcode %in% normalSampList$portions.analytes.aliquots.submitter_id)
+#visualise mutation
+
+
+
+brcaClinic<-GDCquery_clinic(project = "TCGA-BRCA", type = "Clinical")
+#maf<-read.maf(brcaMAF,clinicalData =brcaClinic,isTCGA = T)
+maf<-read.maf(brcaMAF,isTCGA = T)
+
+plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = TRUE, titvRaw = FALSE,showBarcodes=F)
+#We will draw oncoplots for top ten mutated genes.
+oncoplot(maf = maf, top = 10, fontSize = 12)
+
+geneCloud(input = maf, minMut = 30)
+
+#identify cols to keep
+write.csv(colnames(brcaDF),"TCGAcolnames.csv")
+
+
 
