@@ -145,4 +145,25 @@ brcaTabRNA<- brcaTabRNA %>% mutate(bcr_patient_barcode=substr(submitter_id,1,nch
 brcaJoinedRNA<-join(clinicalBRCA,brcaTabRNA,by="bcr_patient_barcode")
 
 
+##Download only BRCA metadata
+brcaDF<-getjoinedBiospcClinc("TCGA-BRCA")
 
+#remove cols with all NA values
+naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
+brcaDFNONA<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
+#keep rows with RNA samples only
+brcaDFRNA<-brcaDFNONA%>%filter(portions.analytes.analyte_type_id == "R")
+
+##download gene mutation metadata
+brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
+
+#visualise mutation
+library(maftools)
+brcaClinic<-GDCquery_clinic(project = "TCGA-BRCA", type = "Clinical")
+#maf<-read.maf(brcaMAF,clinicalData =brcaClinic,isTCGA = T)
+maf<-read.maf(brcaMAF,isTCGA = T)
+plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = TRUE, titvRaw = FALSE)
+#We will draw oncoplots for top ten mutated genes.
+oncoplot(maf = maf, top = 10, fontSize = 12)
+
+geneCloud(input = maf, minMut = 30)
