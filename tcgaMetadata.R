@@ -48,6 +48,14 @@ getjoinedBiospcClinc<-function(projName){
   return(finalJoined)
 }
 
+printDatadim<-function(projName){
+  print(paste("Downloading",projName))
+  clinicalBRCA <- GDCquery_clinic(project = projName, type = "clinical")
+  biospecimenBRCA <- GDCquery_clinic(project = projName, type = "Biospecimen")
+  print(paste("clinical dim:",dim(clinicalBRCA)))
+  print(paste("biospc dim:",dim(biospecimenBRCA)))
+}
+
 ##########################End Functions##########################################
 
 #download and merge BRCA metadata
@@ -55,7 +63,7 @@ BRCAMetadata<-getjoinedBiospcClinc("TCGA-BRCA")
 clinical <- GDCquery_clinic(project = "TCGA-UCS", type = "clinical")
 
 tcgaProjList<-c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-UCEC","TCGA-UCS","TCGA-READ","TCGA-COAD","TCGA-LIHC","TCGA-HNSC","TCGA-ESCA","TCGA-PRAD","TCGA-STAD","TCGA-THCA","TCGA-LUAD","TCGA-LUSC","TCGA-KIRC","TCGA-KIRP","TCGA-KICH")
-tcgaProjList<-c("TCGA-HNSC","TCGA-ESCA","TCGA-PRAD")
+#tcgaProjList<-c("TCGA-BLCA","TCGA-HNSC","TCGA-ESCA","TCGA-PRAD")
 
 #mdList will have all data frames for rcgaProjList
 mdListDF<-data.frame()
@@ -70,6 +78,12 @@ for(s in tcgaProjList){
   }
   
 }
+
+#remove cols with all NA values
+naCols<-colnames(mdListDF)[sapply(mdListDF, function(x)all(is.na(x)))]
+mdListDFNONA<-mdListDF[,!(colnames(mdListDF) %in% naCols)]
+#keep rows with RNA samples only
+mdListDFRNA<-mdListDF%>%filter(portions.analytes.analyte_type_id == "R")
 
 ulMD<-unlist(mdList)
 mdJoined<-rbindlist(unlist(mdList))
@@ -92,13 +106,41 @@ length(unique(colnames(clinicaltest)))
 intersect(colnames(biospecimentest),colnames(clinicaltest))
 
 
-#which columns are all na
-naCols<-colnames(BRCAMetadata)[sapply(BRCAMetadata, function(x)all(is.na(x)))]
-BRCAMetadata<-BRCAMetadata[,!(colnames(BRCAMetadata) %in% naCols)]
+#check data dim for all projects
+start.time <- Sys.time()
+for(s in tcgaProjList){
+  printDatadim(s)
+}
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
 
-#filter to keep only RNA samples
-BRCAMetadata<-BRCAMetadata%>%filter(portions.analytes.analyte_type_id == "R")
+biospecimenUCS<- GDCquery_clinic(project = "TCGA-UCS", type = "Biospecimen")
+biospecimenCESC<- GDCquery_clinic(project = "TCGA-CESC", type = "Biospecimen")
+clinicalUCS<- GDCquery_clinic(project = "TCGA-UCS", type = "Clinical")
+clinicalCESC<- GDCquery_clinic(project = "TCGA-CESC", type = "Clinical")
 
-ggplot(data=BRCAMetadata,aes(fill=race))+geom_bar(aes(x=primary_diagnosis))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+cnClUCS<-colnames(clinicalUCS)
+cnClCESC<-colnames(clinicalCESC)
+cnBSUCS<-colnames(biospecimenUCS)
+cnBSCESC<-colnames(biospecimenCESC)
 
+setdiff(cnClUCS,cnClCESC)
+all.equal(cnClCESC,cnClUCS)
+setdiff(cnBSCESC,cnBSUCS)
+head(biospecimenCESC[,setdiff(cnBSCESC,cnBSUCS)])
+
+#join two bstables
+bsJ<-bind_rows(biospecimenCESC,biospecimenUCS)
+
+ucsJ<-getjoinedBiospcClinc("TCGA-UCS")
+cescJ<-getjoinedBiospcClinc("TCGA-CESC")
+
+cnCESC<-colnames(cescJ)
+cnUCS<-colnames(ucsJ)
+extraCols<-setdiff(cnCESC,cnUCS)
+
+temp<-cescJ[,setdiff(cnCESC,cnUCS)]
+
+joined<-bind_rows(ucsJ,cescJ)
 
