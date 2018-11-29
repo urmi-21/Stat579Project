@@ -26,6 +26,29 @@ splitMafby<-function(clinicalData,by,mafData){
   return(myList)
 }
 
+plotSummaryTofile<-function(mafList,fname){
+  l1<-mafList
+  #for each item in list do calculations
+  lnames<-names(l1)
+  plotList<-list()
+  k<-0
+  pdf(fname)
+  for(i in lnames){
+    print((i))
+    print(dim(l1[[i]]))
+    if(dim(l1[[i]])[1]<1){
+      next
+    }
+    #plot summary and save to pdf
+    maf<-read.maf(l1[[i]],isTCGA = T)
+    plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F)
+    mtext(paste("Mutation summary by",i), outer=T,  cex=NA, line=-1.5,side = 3)
+  }
+  dev.off()
+}
+
+
+##############################################################################################################################
 
 ##download gene mutation metadata
 brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
@@ -33,26 +56,17 @@ brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
 #read clinical metadata
 TCGAbrcaMetadata_reduced <- read_csv("TCGAbrcaMetadata_reduced.csv")
 
-uv<-unique(TCGAbrcaMetadata_reduced$sample_type)
+tempList<-list()
+tempList[["BRCADataset"]]<-brcaMAF
+plotSummaryTofile(tempList,"mutationSummary.pdf")
 
 l1<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.race",brcaMAF)
+plotSummaryTofile(l1,"mutationByRace.pdf")
 
-#for each item in list do calculations
-lnames<-names(l1)
-for(i in lnames){
-  print((i))
-  print(dim(l1[[i]]))
-  #plot summary and save to pdf
-  maf<-read.maf(l1[[i]],isTCGA = T)
-  plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = TRUE, titvRaw = FALSE,showBarcodes=F)
-}
+l2<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.primary_diagnosis",brcaMAF)
+plotSummaryTofile(l2,"mutationByprimarydiagnosis.pdf")
 
+maf<-read.maf(l1[["white"]],isTCGA = T)
+drugInteractions(maf = maf, fontSize = 0.75)
+drugInteractions(genes = "DNMT3A", drugs = TRUE)
 
-clinicalData<-TCGAbrcaMetadata_reduced
-by<-"clinical.race"
-mafData<-brcaMAF
-
-for(s in 1:nrow(uniqVals)){
-  print(uniqVals[s,1])
-  print("***")
-}
