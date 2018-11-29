@@ -6,6 +6,7 @@ library(data.table)
 library(maftools)
 library("readr")
 library(TCGAbiolinks)
+library(ggplot2)
 packageVersion("TCGAbiolinks")
 
 ###########################################define functions##############################################################
@@ -65,6 +66,17 @@ plotSummaryTofile(l1,"mutationByRace.pdf")
 
 l2<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.primary_diagnosis",brcaMAF)
 plotSummaryTofile(l2,"mutationByprimarydiagnosis.pdf")
+
+l3<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.gender",brcaMAF)
+plotSummaryTofile(l3,"mutationBygender.pdf")
+
+primaryDiagnosisFreq<-TCGAbrcaMetadata_reduced%>%select(clinical.primary_diagnosis)%>%group_by(clinical.primary_diagnosis)%>%count()%>%arrange(desc(freq))%>%mutate(logfreq=log10(freq))
+primaryDiagnosisFreq$clinical.primary_diagnosis<-factor(primaryDiagnosisFreq$clinical.primary_diagnosis, levels = primaryDiagnosisFreq$clinical.primary_diagnosis)
+ggplot(data=primaryDiagnosisFreq,aes(x=clinical.primary_diagnosis,y=logfreq,fill=freq))+geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#group by diagnosis and gender
+primaryDiagnosisFreq<-TCGAbrcaMetadata_reduced%>%select(clinical.gender,clinical.primary_diagnosis)%>%group_by(clinical.gender,clinical.primary_diagnosis)%>%count()%>%arrange(desc(freq))%>%mutate(logfreq=log10(freq))
+ggplot(data=primaryDiagnosisFreq,aes(x=clinical.primary_diagnosis,y=logfreq,fill=clinical.gender))+geom_bar(stat = "identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 maf<-read.maf(l1[["white"]],isTCGA = T)
 drugInteractions(maf = maf, fontSize = 0.75)
