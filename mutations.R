@@ -78,6 +78,9 @@ ggplot(data=primaryDiagnosisFreq,aes(x=clinical.primary_diagnosis,y=logfreq,fill
 primaryDiagnosisFreq<-TCGAbrcaMetadata_reduced%>%select(clinical.gender,clinical.primary_diagnosis)%>%group_by(clinical.gender,clinical.primary_diagnosis)%>%count()%>%arrange(desc(freq))%>%mutate(logfreq=log10(freq))
 ggplot(data=primaryDiagnosisFreq,aes(x=clinical.primary_diagnosis,y=logfreq,fill=clinical.gender))+geom_bar(stat = "identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
+#plot dnarna
+ggplot(data=TCGAbrcaMetadata_reduced,aes(x=sample_type,fill=portions.analytes.analyte_type))+geom_bar()+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 maf<-read.maf(l1[["white"]],isTCGA = T)
 drugInteractions(maf = maf, fontSize = 0.75)
 drugInteractions(genes = "DNMT3A", drugs = TRUE)
