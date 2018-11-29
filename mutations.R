@@ -38,8 +38,13 @@ uv<-unique(TCGAbrcaMetadata_reduced$sample_type)
 l1<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.race",brcaMAF)
 
 #for each item in list do calculations
-for(i in l1){
-  print(dim(i))
+lnames<-names(l1)
+for(i in lnames){
+  print((i))
+  print(dim(l1[[i]]))
+  #plot summary and save to pdf
+  maf<-read.maf(l1[[i]],isTCGA = T)
+  plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = TRUE, titvRaw = FALSE,showBarcodes=F)
 }
 
 
