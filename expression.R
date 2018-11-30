@@ -1,5 +1,5 @@
 library(readr)
-
+library(dplyr)
 #Read expression data
 brca_nontumor <- read_delim("brca-rsem-fpkm-tcga.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 brca_tumor <- read_delim("brca-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
@@ -18,3 +18,6 @@ rownames(brca_tumor)<-rn
 tp53data<-brca_nontumor[which(rownames(brca_nontumor)=="TP53"),]
 
 brca_nontumorCor<-cor(t(brca_nontumor))
+
+x<-brca_nontumorCor[which(rownames(brca_nontumorCor)=="TP53"),]
+sort(x, decreasing = T)
