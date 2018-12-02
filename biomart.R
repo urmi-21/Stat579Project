@@ -31,9 +31,13 @@ fwrite(hsGeneData,file ="hsGeneData.csv", row.names = F)
 
 
 #read tcga hgnc list and join with ensembl data
+#in this dataset missing genes for particular studies have zero values
 allCombined_20089_9149 <- read_csv("allCombined_20089_9149.csv")
 head(colnames(allCombined_20089_9149))
 
+
+#read hsgene data file
+hsGeneData <- read_csv("hsGeneData.csv")
 
 #join datasets
 joinedDF<-join(hsGeneData,allCombined_20089_9149,by="Hugo_Symbol",type="right")
@@ -42,8 +46,17 @@ head(colnames(joinedDF),10)
 joinedDF[,1:9][is.na(joinedDF[,1:9])]<-"NA"
 test<-joinedDF[,head(colnames(joinedDF),10)]
 
-#find rows with NA values
-naRows<-allCombined_20089_9149[rowSums(is.na(allCombined_20089_9149)) > 0,]
 
 
-fwrite(joinedDF,file ="TCGA_GTEXjoinedDF.csv", row.names = F)
+fwrite(joinedDF,file ="TCGA_GTEX_MD_20089_9149.tsv", row.names = F,sep = "\t")
+
+#read dataset with only common genes
+TCGA_GTEX_Combined_18154_9149 <- read_csv("TCGA_GTEX_Combined_18154_9149.csv")
+#join datasets
+joinedDF2<-join(hsGeneData,TCGA_GTEX_Combined_18154_9149,by="Hugo_Symbol",type="right")
+head(colnames(joinedDF2),10)
+#replaca NA with "NA" in infocols
+joinedDF2[,1:9][is.na(joinedDF2[,1:9])]<-"NA"
+test<-joinedDF2[,head(colnames(joinedDF2),10)]
+
+
