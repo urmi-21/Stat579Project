@@ -24,6 +24,10 @@ getmafs<-function(projList){
   return(allMaf)
 }
 
+geneToTranscript<-function(mafFile){
+  return(distinct(mafFile[,c("Transcript_ID","Gene","Hugo_Symbol","ENSP","SWISSPROT","TREMBL","BIOTYPE","RefSeq")]))
+}
+
 ############################################################################
 tcgamafProjList<-c("BLCA","BRCA","CESC","UCEC","UCS","READ","COAD","LIHC","HNSC","ESCA","PRAD","STAD","THCA","LUAD","LUSC","KIRC","KIRP","KICH")
 ucsmaf<-getmaf("UCS")
@@ -33,3 +37,12 @@ mafs<-getmafs(c("UCS","UVM","BLCA"))
 
 maf<-read.maf(mafs,isTCGA = T)
 plotmafSummary(maf = maf)
+
+
+colnames(brcaMAF)
+#geneDataCols<-c( "Hugo_Symbol","Entrez_Gene_Id","NCBI_Build", "Chromosome","Start_Position","End_Position","Strand","Gene"  )
+
+brcaTids<-geneToTranscript(brcaMAF)
+
+#create a list of tids
+
