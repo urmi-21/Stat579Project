@@ -38,7 +38,9 @@ head(colnames(allCombined_20089_9149))
 #join datasets
 joinedDF<-join(hsGeneData,allCombined_20089_9149,by="Hugo_Symbol",type="right")
 head(colnames(joinedDF),10)
+#replaca NA with "NA" in infocols
+joinedDF[,1:9][is.na(joinedDF[,1:9])]<-"NA"
 test<-joinedDF[,head(colnames(joinedDF),10)]
 
 
-fwrite(dfgtex,file ="allGTEXExpectedCts.csv", row.names = F)
+fwrite(test,file ="allGTEXExpectedCts.csv", row.names = F)
