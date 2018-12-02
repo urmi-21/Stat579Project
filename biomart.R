@@ -11,6 +11,8 @@ getSequence(id = c("673","7157","837"),
             upstream=100, 
             mart=ensembl) 
 
-getGene( id = "100", type = "entrezgene", mart = ensembl)
 
 
+attList<-listAttributes(ensembl)
+
+hsGeneData<-getBM(attributes = c("ensembl_gene_id","start_position","end_position","strand","transcript_count","percentage_gene_gc_content","gene_biotype","hgnc_symbol"),mart = ensembl)
