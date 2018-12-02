@@ -1,5 +1,6 @@
 library("biomaRt")
 library(readr)
+library(plyr)
 listMarts()
 ensembl=useMart("ENSEMBL_MART_ENSEMBL")
 listDatasets(ensembl)
@@ -24,3 +25,4 @@ head(colnames(allCombined_20089_9149))
 colnames(hsGeneData)[which(colnames(hsGeneData)=="hgnc_symbol")]<-"Hugo_Symbol"
 
 #join datasets
+joinedDF<-join(hsGeneData,allCombined_20089_9149,by="Hugo_Symbol",type="full")
