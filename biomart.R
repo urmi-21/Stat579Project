@@ -1,4 +1,5 @@
 library("biomaRt")
+library(readr)
 listMarts()
 ensembl=useMart("ENSEMBL_MART_ENSEMBL")
 listDatasets(ensembl)
@@ -18,3 +19,8 @@ attList<-listAttributes(ensembl)
 hsGeneData<-getBM(attributes = c("ensembl_gene_id","start_position","end_position","strand","transcript_count","percentage_gene_gc_content","gene_biotype","hgnc_symbol"),mart = ensembl)
 
 #read tcga hgnc list and join with ensembl data
+allCombined_20089_9149 <- read_csv("allCombined_20089_9149.csv")
+head(colnames(allCombined_20089_9149))
+colnames(hsGeneData)[which(colnames(hsGeneData)=="hgnc_symbol")]<-"Hugo_Symbol"
+
+#join datasets
