@@ -42,5 +42,8 @@ head(colnames(joinedDF),10)
 joinedDF[,1:9][is.na(joinedDF[,1:9])]<-"NA"
 test<-joinedDF[,head(colnames(joinedDF),10)]
 
+#find rows with NA values
+naRows<-allCombined_20089_9149[rowSums(is.na(allCombined_20089_9149)) > 0,]
 
-fwrite(test,file ="allGTEXExpectedCts.csv", row.names = F)
+
+fwrite(joinedDF,file ="TCGA_GTEXjoinedDF.csv", row.names = F)
