@@ -16,3 +16,5 @@ getSequence(id = c("673","7157","837"),
 attList<-listAttributes(ensembl)
 
 hsGeneData<-getBM(attributes = c("ensembl_gene_id","start_position","end_position","strand","transcript_count","percentage_gene_gc_content","gene_biotype","hgnc_symbol"),mart = ensembl)
+
+#read tcga hgnc list and join with ensembl data
