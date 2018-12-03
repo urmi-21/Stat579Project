@@ -42,7 +42,7 @@ plotSummaryTofile<-function(mafList,fname){
     }
     #plot summary and save to pdf
     maf<-read.maf(l1[[i]],isTCGA = T)
-    plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F)
+    plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F, top = 20)
     mtext(paste("Mutation summary by",i), outer=T,  cex=NA, line=-1.5,side = 3)
   }
   dev.off()
@@ -50,16 +50,30 @@ plotSummaryTofile<-function(mafList,fname){
 
 
 ##############################################################################################################################
-
-##download gene mutation metadata
-brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
-
 #read clinical metadata
 TCGAbrcaMetadata_reduced <- read_csv("TCGAbrcaMetadata_reduced.csv")
+colnames(TCGAbrcaMetadata_reduced)[which(colnames(TCGAbrcaMetadata_reduced)=="portions.analytes.aliquots.submitter_id")]="Tumor_Sample_Barcode"
+##download gene mutation metadata
+brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
+brcaMAF<-join(brcaMAF,TCGAbrcaMetadata_reduced)
+ggplot(data=brcaMAF_brca,aes(x=clinical.race,fill=VARIANT_CLASS))+geom_bar()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+#count mutations in BRCA1/2
+brcaMAF_brca <- brcaMAF %>% filter(Hugo_Symbol %in% c("BRCA1","BRCA2"))
+brcaMAF_brca<-join(brcaMAF_brca,TCGAbrcaMetadata_reduced,type="left")
+
+ggplot(data=brcaMAF_brca,aes(x=Hugo_Symbol,fill=VARIANT_CLASS))+geom_bar()
+ggplot(data=brcaMAF_brca,aes(x=Hugo_Symbol,fill=clinical.race))+geom_bar()
+
+
+
+
 
 tempList<-list()
 tempList[["BRCADataset"]]<-brcaMAF
-plotSummaryTofile(tempList,"mutationSummary.pdf")
+plotSummaryTofile(tempList,"mutationSummary20.pdf")
 
 l1<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.race",brcaMAF)
 plotSummaryTofile(l1,"mutationByRace.pdf")
