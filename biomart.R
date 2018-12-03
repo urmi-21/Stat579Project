@@ -29,15 +29,15 @@ sum(duplicated(hsGeneData$Hugo_Symbol))
 hsGeneData$Hugo_Symbol[duplicated(hsGeneData$Hugo_Symbol)]
 fwrite(hsGeneData,file ="hsGeneData.csv", row.names = F)
 
-
+#read hsgene data file
+hsGeneData <- read_csv("hsGeneData.csv")
 #read tcga hgnc list and join with ensembl data
 #in this dataset missing genes for particular studies have zero values
 allCombined_20089_9149 <- read_csv("allCombined_20089_9149.csv")
 head(colnames(allCombined_20089_9149))
 
 
-#read hsgene data file
-hsGeneData <- read_csv("hsGeneData.csv")
+
 
 #join datasets
 joinedDF<-join(hsGeneData,allCombined_20089_9149,by="Hugo_Symbol",type="right")
@@ -58,5 +58,5 @@ head(colnames(joinedDF2),10)
 #replaca NA with "NA" in infocols
 joinedDF2[,1:9][is.na(joinedDF2[,1:9])]<-"NA"
 test<-joinedDF2[,head(colnames(joinedDF2),10)]
-
+fwrite(joinedDF2,file ="TCGA_GTEX_MD_18154_9149.tsv", row.names = F,sep = "\t")
 
