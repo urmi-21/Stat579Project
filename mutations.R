@@ -55,9 +55,26 @@ TCGAbrcaMetadata_reduced <- read_csv("TCGAbrcaMetadata_reduced.csv")
 colnames(TCGAbrcaMetadata_reduced)[which(colnames(TCGAbrcaMetadata_reduced)=="portions.analytes.aliquots.submitter_id")]="Tumor_Sample_Barcode"
 ##download gene mutation metadata
 brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
-brcaMAF<-join(brcaMAF,TCGAbrcaMetadata_reduced)
-ggplot(data=brcaMAF_brca,aes(x=clinical.race,fill=VARIANT_CLASS))+geom_bar()+
+brcaMAF_MD<-join(brcaMAF,TCGAbrcaMetadata_reduced)
+ggplot(data=brcaMAF_MD,aes(x=clinical.race,fill=VARIANT_CLASS))+geom_bar()+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#what percent of mutations are in BRCA1 BRCA 2
+brcaMAF_MD_geneGroupBRCA<-brcaMAF_MD%>%select(Hugo_Symbol)%>%mutate(geneName=ifelse(Hugo_Symbol=="BRCA1","BRCA1",ifelse(Hugo_Symbol=="BRCA2","BRCA2","Other"))) %>%select(geneName)%>% group_by(geneName) %>% count %>% mutate(logFreq=log(freq))
+
+ggplot(data=brcaMAF_MD_geneGroupBRCA, aes(x=geneName,y=logFreq,fill=geneName))+geom_bar(stat = "identity")+theme(legend.position = "none")+
+  theme(axis.text.x = element_text(size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))
+
+
+
+ggplot(data=brcaMAF_MD%>%filter(Hugo_Symbol %in% c("BRCA1","BRCA2")),aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar()+
+  theme(axis.text.x = element_text(size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),legend.text=element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))
 
 
 #count mutations in BRCA1/2
