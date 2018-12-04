@@ -40,7 +40,17 @@ ggplot(melt(nt), aes(x=factor(variable),y=value,fill=factor(variable)))+geom_box
 tdata<-as.data.frame(t(brca_tumor[topGenes,]))
 colnames(tdata)<-topGenes
 
-ggplot(melt(tdata), aes(x=factor(variable),y=value,fill=factor(variable)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top")+
+ggplot(melt(tdata), aes(x=factor(variable),y=value,fill=factor(variable)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top",legend.text = element_text(size = 10,face = "bold"))+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+
+nt<-nt%>%mutate(source="Non-Tumor")
+tdata<-tdata%>%mutate(source="Tumor")
+
+topCombined<-bind_rows(nt,tdata)
+ggplot(melt(topCombined), aes(x=factor(variable),y=value,fill=factor(source)))+geom_boxplot(outlier.colour=NA)+scale_y_log10()+theme(legend.position = "top",legend.text = element_text(size = 15,face = "bold"))+
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
@@ -60,13 +70,28 @@ colnames(tdataUP)<-upGenes
 tdataUP<-tdataUP%>%mutate(source="Tumor")
 
 diffExpgenes<-bind_rows(ntUP,tdataUP)
+dodge <- position_dodge(width = 0.5)
 
-ggplot(melt(diffExpgenes), aes(x=factor(variable),y=value,fill=factor(source)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top")+
+ggplot(melt(diffExpgenes), aes(x=factor(variable),y=value,fill=factor(source)))+geom_violin(position = dodge)+geom_boxplot(width=.1, outlier.colour=NA, position = dodge)+scale_y_log10()+theme(legend.position = "top")+
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
 
+#for down regulated in cancer
+ntDWN<-as.data.frame(t(brca_nontumor[dwnGenes,]))
+colnames(ntDWN)<-dwnGenes
+ntDWN<-ntDWN%>%mutate(source="Non-Tumor")
+tdataDWN<-as.data.frame(t(brca_tumor[dwnGenes,]))
+colnames(tdataDWN)<-dwnGenes
+tdataDWN<-tdataDWN%>%mutate(source="Tumor")
+diffExpgenesDWN<-bind_rows(ntDWN,tdataDWN)
 
+
+ggplot(melt(diffExpgenesDWN), aes(x=factor(variable),y=value,fill=factor(source)))+geom_violin(position = dodge)+geom_boxplot(width=.1, outlier.colour=NA, position = dodge)+scale_y_log10()+theme(legend.position = "top")+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
 
 

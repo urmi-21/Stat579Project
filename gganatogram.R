@@ -23,7 +23,7 @@ hgMale_key$organ
 
 gganatogram(data=hgMale_key, fillOutline='#a6bddb', organism='human', sex='male', fill="colour") +theme_void()
 
-gganatogram(data=organPlot, fillOutline='#a6bddb', organism='human', sex='male', fill="value") + 
+gganatogram(data=organPlot, fillOutline='#a6bddb', organism='human', sex='female', fill="value") + 
   theme_void() +
   scale_fill_gradient(low = "white", high = "red")
 
@@ -55,4 +55,38 @@ rownames(stad)<-stadRownames
 
 #get mean exp of top10 BRCA genes in all samps
 topGenes<-c("PIK3CA","TP53","TTN","GATA3","CDH1","MAP3K1","MUC16","KMT2C","MUC4","PTEN")
+expVals<-c()
+temp<-t(brca[topGenes,])
+colnames(temp)<-topGenes
+meanbrca<-colMeans(temp)
+
+temp<-t(coad[topGenes,])
+colnames(temp)<-topGenes
+meancoad<-colMeans(temp)
+
+temp<-t(lihc[topGenes,])
+colnames(temp)<-topGenes
+meanlihc<-colMeans(temp)
+
+temp<-t(luad[topGenes,])
+colnames(temp)<-topGenes
+meanluad<-colMeans(temp)
+
+temp<-t(stad[topGenes,])
+colnames(temp)<-topGenes
+meanstad<-colMeans(temp)
+
+#expr of PIK#ca
+organs<-c("breast","colon","liver","lung","stomach")
+type<-c( "other","digestion","digestion","respiratory","digestion")
+colour<-c("#41ab5d","orange","orange","steelblue","orange")
+i<-1
+vals<-c(meanbrca[i],meancoad[i],meanlihc[i],meanluad[i],meanstad[i])
+gganatogramData<-data.frame(organ=organs,type=type,colour=colour,value=as.numeric(vals),stringsAsFactors=F)
+
+gganatogram(data=gganatogramData, fillOutline='#a6bddb', organism='human', sex='female', fill="value")+ 
+  theme_void()+  scale_fill_gradient(low = "yellow", high = "red",name= paste(topGenes[i],"(fpkm)"))+theme(legend.text = element_text(size=12,face = "bold"),legend.position = c(0.75, 0.2))
+  
+
+
 
