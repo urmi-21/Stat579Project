@@ -29,11 +29,44 @@ topGenes<-c("PIK3CA","TP53","TTN","GATA3","CDH1","MAP3K1","MUC16","KMT2C","MUC4"
 nt<-as.data.frame(t(brca_nontumor[topGenes,]))
 colnames(nt)<-topGenes
 
-ggplot(data=nt)+ geom_boxplot(stat = "count")
 
 ggplot(melt(nt), aes(x=factor(variable),y=value,fill=factor(variable)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top")+
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+
+#tumordata
+tdata<-as.data.frame(t(brca_tumor[topGenes,]))
+colnames(tdata)<-topGenes
+
+ggplot(melt(tdata), aes(x=factor(variable),y=value,fill=factor(variable)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top")+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+
+
+#ref for data https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5470989/
+upGenes<-c("E2F1", "EZH2", "FOXM1", "MYBL2", "PLK1")
+dwnGenes<-c("SCARA5", "MYOM1", "NKAPL", "PEG3", "USP2")
+
+
+ntUP<-as.data.frame(t(brca_nontumor[upGenes,]))
+colnames(ntUP)<-upGenes
+ntUP<-ntUP%>%mutate(source="Non-Tumor")
+tdataUP<-as.data.frame(t(brca_tumor[upGenes,]))
+colnames(tdataUP)<-upGenes
+tdataUP<-tdataUP%>%mutate(source="Tumor")
+
+diffExpgenes<-bind_rows(ntUP,tdataUP)
+
+ggplot(melt(diffExpgenes), aes(x=factor(variable),y=value,fill=factor(source)))+geom_boxplot()+scale_y_log10()+theme(legend.position = "top")+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+
+
+
 
