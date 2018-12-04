@@ -26,3 +26,33 @@ gganatogram(data=hgMale_key, fillOutline='#a6bddb', organism='human', sex='male'
 gganatogram(data=organPlot, fillOutline='#a6bddb', organism='human', sex='male', fill="value") + 
   theme_void() +
   scale_fill_gradient(low = "white", high = "red")
+
+#read tumor data for brca,liver,stomach,colon,Lung
+brca <- read_delim("tumorExp/brca-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+brcaRownames<-brca$Hugo_Symbol
+brca<-brca[,3:dim(brca)[2]]
+rownames(brca)<-brcaRownames
+
+coad<-read_delim("tumorExp/coad-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+coadRownames<-coad$Hugo_Symbol
+coad<-coad[,3:dim(coad)[2]]
+rownames(coad)<-coadRownames
+
+lihc<-read_delim("tumorExp/lihc-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+lihcRownames<-lihc$Hugo_Symbol
+lihc<-lihc[,3:dim(lihc)[2]]
+rownames(lihc)<-lihcRownames
+
+luad<-read_delim("tumorExp/luad-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+luadRownames<-luad$Hugo_Symbol
+luad<-luad[,3:dim(luad)[2]]
+rownames(luad)<-luadRownames
+
+stad<-read_delim("tumorExp/stad-rsem-fpkm-tcga-t.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+stadRownames<-stad$Hugo_Symbol
+stad<-stad[,3:dim(stad)[2]]
+rownames(stad)<-stadRownames
+
+#get mean exp of top10 BRCA genes in all samps
+topGenes<-c("PIK3CA","TP53","TTN","GATA3","CDH1","MAP3K1","MUC16","KMT2C","MUC4","PTEN")
+
