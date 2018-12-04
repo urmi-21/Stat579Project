@@ -80,7 +80,7 @@ meanstad<-colMeans(temp)
 organs<-c("breast","colon","liver","lung","stomach")
 type<-c( "other","digestion","digestion","respiratory","digestion")
 colour<-c("#41ab5d","orange","orange","steelblue","orange")
-i<-1
+i<-10
 vals<-c(meanbrca[i],meancoad[i],meanlihc[i],meanluad[i],meanstad[i])
 gganatogramData<-data.frame(organ=organs,type=type,colour=colour,value=as.numeric(vals),stringsAsFactors=F)
 
