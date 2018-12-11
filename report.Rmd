@@ -35,7 +35,11 @@ Then we downloaded the mutation information for the BRCA studies. This data
 Finally, I collected the gene expression data  from (Wang et. al. 2018). This data contains the estimated expression values of genes in the BRCA study. This data was normalized and batch corrected so it is comparable across different TCGA samples.
 
 
-## Downloading
+## Data downloading and processing
+
+This section describes how the data was downloaded and pre-processed for further analysis.
+
+### Downloading clinical data from TCGA
 
 ## Processing
 
