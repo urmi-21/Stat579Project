@@ -95,13 +95,13 @@ getjoinedBiospcClinc<-function(projName){
 }
 ########################################
 ##Download only BRCA metadata
-brcaDF<-getjoinedBiospcClinc("TCGA-CHOL")
+brcaDF<-getjoinedBiospcClinc("TCGA-BRCA")
 brcaDF<-brcaDF[,colsToKeep]
 #remove cols with all NA values
 naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
 brcaDF<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
 
-head(brcaDF)
+head(brcaDF,3)
 ```
 
 ## Processing
