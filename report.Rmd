@@ -101,8 +101,23 @@ brcaDF<-brcaDF[,colsToKeep]
 naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
 brcaDF<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
 
-head(brcaDF,3)
+head(brcaDF[,1:5],3)
 ```
+
+The clinical data for BRCA studies is stored in a dataframe *brcaDF*. Next, we downloaded mutation data using TCGABiolinks. After getting the mutation data, we joined the clinical table with the mutation table to have clinical information for each mutation in the mutation table.
+
+```{r,message=FALSE,cache=TRUE}
+brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
+#join mutation information with the clinical data
+brcaMAF_MD<-join(brcaMAF,TCGAbrcaMetadata_reduced)
+ggplot(data=brcaMAF_MD,aes(x=clinical.race,fill=VARIANT_CLASS))+geom_bar()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+head(brcaMAF,3)
+head(brcaMAF_MD,3)
+```
+
+
 
 ## Processing
 
