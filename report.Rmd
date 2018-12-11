@@ -32,7 +32,7 @@ We used data from TCGA. TCGA is a comprehensive repository of human cancer molec
 
 First, we collected data clinical data from TCGA for breast cancer (BRCA) studies. This data contains
 Then we downloaded the mutation information for the BRCA studies. This data
-Finally, I collected the gene expression data  from (Wang et. al. 2018).
+Finally, I collected the gene expression data  from (Wang et. al. 2018). This data contains the estimated expression values of genes in the BRCA study. This data was normalized and batch corrected so it is comparable across different TCGA samples.
 
 
 ## Downloading
