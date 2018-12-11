@@ -24,7 +24,7 @@ expand<-function(df,colName){
     #change colnames so they are unique
     colnames(tempdf)<-paste(paste(colName,".",sep = ""),colnames(tempdf),sep = "")
     #print(paste(i,colnames(tempdf)))
-    newRow<-cbind(thisRow,tempdf)
+    newRow<-cbind(thisRow,tempdf,row.names = NULL)
     res<-bind_rows(res,newRow)
     
   }

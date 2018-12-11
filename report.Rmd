@@ -5,7 +5,7 @@ date: "December 8, 2018"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, cache=TRUE,message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -40,6 +40,69 @@ Finally, I collected the gene expression data  from (Wang et. al. 2018). This da
 This section describes how the data was downloaded and pre-processed for further analysis.
 
 ### Downloading clinical data from TCGA
+
+We used the TCGABiolinks package to download TCGA data. The function *GDCquery_clinic* is used to download the data. We wrote additional functions to clean the data and arrange it into a dataframe.
+
+```{r,message=FALSE,cache=TRUE}
+#required packages
+library(TCGAbiolinks)
+library(dplyr)
+library(DT)
+library(data.table)
+library(plyr)
+
+colsToKeep<-c("clinical.submitter_id","clinical.classification_of_tumor","clinical.primary_diagnosis","clinical.tumor_stage","clinical.age_at_diagnosis","clinical.vital_status","clinical.days_to_death","clinical.tissue_or_organ_of_origin","clinical.days_to_birth","clinical.site_of_resection_or_biopsy","clinical.days_to_last_follow_up","clinical.cigarettes_per_day","clinical.weight","clinical.alcohol_history","clinical.bmi","clinical.years_smoked","clinical.height","clinical.gender","clinical.year_of_birth","clinical.race","clinical.ethnicity","clinical.year_of_death","clinical.bcr_patient_barcode","clinical.disease","submitter_id","sample_type","tissue_type","portions.submitter_id","portions.analytes.analyte_type","portions.analytes.submitter_id","portions.analytes.analyte_type_id","portions.analytes.aliquots.analyte_type","portions.analytes.aliquots.submitter_id")
+#Function takes a df and expands it by unlisting elements at a column
+expand<-function(df,colName){
+  res<-data.frame()
+  #for each row
+  for(i in 1: dim(df)[1]){
+    thisRow<-df[i, ! (colnames(df) %in% c(colName))]
+    tempdf<-as.data.frame(df[i, c(colName)])
+    #if list is empty skip that row
+    if(dim(tempdf)[1]<1){
+      next
+    }
+    #change colnames so they are unique
+    colnames(tempdf)<-paste(paste(colName,".",sep = ""),colnames(tempdf),sep = "")
+    #print(paste(i,colnames(tempdf)))
+    newRow<-cbind(thisRow,tempdf,row.names = NULL)
+    res<-bind_rows(res,newRow)
+    
+  }
+  #print(res)
+  return(res)
+}
+
+getjoinedBiospcClinc<-function(projName){
+  print(paste("Downloading",projName))
+  clinicalBRCA <- GDCquery_clinic(project = projName, type = "clinical")
+  biospecimenBRCA <- GDCquery_clinic(project = projName, type = "Biospecimen")
+  
+  #rename all cols from clinical table with suffix clinical
+  colnames(clinicalBRCA)<- paste0("clinical.",colnames(clinicalBRCA))
+  
+  #expand biospecimen data in the order portions, portions.analytes, portions.analytes.aliquots
+  toUnpack<-c("portions", "portions.analytes", "portions.analytes.aliquots")
+  for(s in toUnpack){
+    biospecimenBRCA<-expand(biospecimenBRCA,s)
+  }
+  #add patient barcode to biospecimen data
+  biospecimenBRCA<- biospecimenBRCA %>% mutate(clinical.bcr_patient_barcode=substr(submitter_id,1,nchar(as.character(submitter_id))-4))
+  #join clinical and biospecimen
+  finalJoined<-join(clinicalBRCA,biospecimenBRCA,by="clinical.bcr_patient_barcode")
+  return(finalJoined)
+}
+########################################
+##Download only BRCA metadata
+brcaDF<-getjoinedBiospcClinc("TCGA-CHOL")
+brcaDF<-brcaDF[,colsToKeep]
+#remove cols with all NA values
+naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
+brcaDF<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
+
+head(brcaDF)
+```
 
 ## Processing
 
