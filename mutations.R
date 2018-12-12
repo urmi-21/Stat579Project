@@ -123,9 +123,27 @@ drugInteractions(genes = "DNMT3A", drugs = TRUE)
 whiteMaf<-l1[["white"]]
 #maftest<-whiteMaf %>% select(Hugo_Symbol,Variant_Classification) %>% group_by(Variant_Classification) %>% count %>% group_by(Hugo_Symbol) %>% count %>% filter(Hugo_Symbol =="USO1")
 
-maftest<-brcaMAF %>% select(Hugo_Symbol,Variant_Classification) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=10)%>% filter(Hugo_Symbol =="TP53")
+maftest<-brcaMAF %>% select(Hugo_Symbol,Variant_Classification) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=20)
 
-maftest<-brcaMAF %>% filter(Hugo_Symbol =="TP53") %>% select(Hugo_Symbol,Variant_Classification) %>% group_by(Variant_Classification) 
-ggplot(data=head(maftest,10),aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar(stat = "count")
+#find top mutated genes
+topGenes<-brcaMAF %>% filter(Variant_Classification != "Silent") %>% select(Hugo_Symbol) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=10)
+
+maftest<-brcaMAF %>% filter(Hugo_Symbol %in% topGenes$Hugo_Symbol & Variant_Classification != "Silent") %>% select(Hugo_Symbol,Variant_Classification) 
+
+#for fill colors
+library("RColorBrewer", lib.loc="~/R/win-library/3.5")
+colourCount = length(unique(maftest$Variant_Classification))
+getPalette = colorRampPalette(brewer.pal(9, "Dark2"))
+
+ggplot(data=maftest,aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar(stat = "count")+ scale_x_discrete(limits = rev(topGenes$Hugo_Symbol))+coord_flip()+
+  theme(legend.position = "top",legend.text = element_text(size = 11),legend.title = element_blank())+
+  theme(axis.text.x = element_text(angle=45,size = 11,face = "bold"),axis.text.y = element_text(size = 11,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ 
+    ylab("")+xlab("")+scale_fill_manual(values = getPalette(colourCount))
+
+
+plotGeneVarFreq<-function(mafList)
 
 
