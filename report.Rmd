@@ -7,7 +7,9 @@ output: pdf_document
 
 ```{r setup, include=FALSE, cache=FALSE,message=FALSE}
 #knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = TRUE)
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = T)
+
+#if not installed --> install
 
 #required packages
 library(TCGAbiolinks)
@@ -16,8 +18,12 @@ library(DT)
 library(data.table)
 library(plyr)
 library(maftools) 
-library("readr")
+library(readr)
 library(ggplot2)
+library(gganatogram)
+library(viridis)
+library(gridExtra)
+
 ```
 
 
@@ -184,8 +190,8 @@ plotmafSummaryList<-function(mafList){
   #for each item in list do calculations
   lnames<-names(l1)
   plotList<-list()
-  k<-0
-  par(mfrow=c(2,2))   
+  k<-1
+  plist<-list()
   for(i in lnames){
     print((i))
     print(dim(l1[[i]]))
@@ -197,7 +203,7 @@ plotmafSummaryList<-function(mafList){
     plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F, top = 10)
     mtext(paste("Mutation summary by",i), outer=T,  cex=NA, line=-1.0,side = 3)
   }
-  par(mfrow=c(1,1))   
+  
 }
 
 #split maf file into categories by a given variable in the clinical metadata file
@@ -258,7 +264,179 @@ l3<-splitMafby(brcaDF,"clinical.gender",brcaMAF)
 plotmafSummaryList(l3)
 ```
 
+From the analysis above we noticed that BRCA1 and BRCA2 are not in the set of top mutated genes. These genes are known to be associated with cancer and a mutation in these genes can increase the risk of breast and ovarian cancer in women. We then compared how many mutations were associated with BRCA1 and BRCA2.
 
+```{r fig5, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting exampleBRCA"}
+brcaMAF_MD_geneGroupBRCA<-brcaMAF_MD%>%select(Hugo_Symbol)%>%mutate(geneName=ifelse(Hugo_Symbol=="BRCA1","BRCA1",ifelse(Hugo_Symbol=="BRCA2","BRCA2","Others"))) %>%select(geneName)%>% group_by(geneName) %>% count %>% mutate(logFreq=log(freq))
+
+p1<-ggplot(data=brcaMAF_MD_geneGroupBRCA, aes(x=geneName,y=logFreq,fill=geneName))+geom_bar(stat = "identity")+theme(legend.position = "none")+
+  theme(axis.text.x = element_text(size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_brewer(palette="Paired")
+
+
+
+p2<-ggplot(data=brcaMAF_MD%>%filter(Hugo_Symbol %in% c("BRCA1","BRCA2")),aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar()+
+  theme(axis.text.x = element_text(size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),legend.text=element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_brewer(palette="Dark2")
+
+grid.arrange(p1, p2, nrow = 1)
+
+```
+
+From figure we see that ...
+
+
+After looking at various mutated genes, we looked at the expression pattern of these genes for tumor and normal samples.
+
+```{r fig6, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig6}plotting express"}
+#plot box plots of top mutated genes
+topGenes<-c("PIK3CA","TP53","TTN","GATA3","CDH1","MAP3K1","MUC16","KMT2C","MUC4","PTEN")
+nt<-as.data.frame(t(brcaexp_nontumor[topGenes,]))
+colnames(nt)<-topGenes
+#tumordata
+tdata<-as.data.frame(t(brcaexp_tumor[topGenes,]))
+colnames(tdata)<-topGenes
+nt<-nt%>%mutate(source="Non-Tumor")
+tdata<-tdata%>%mutate(source="Tumor")
+
+topCombined<-bind_rows(nt,tdata)
+ggplot(melt(topCombined), aes(x=factor(variable),y=value,fill=factor(source)))+geom_boxplot(outlier.colour=NA)+scale_y_log10()+theme(legend.position = "top",legend.text = element_text(size = 15,face = "bold"))+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ 
+  scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+scale_fill_brewer(palette="Set1")
+
+
+```
+
+From fig we found that the expression of
+
+After that we compiled a list of genes are known to be differentially expressed in cancer.
+
+```{r fig7, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig7}plotting express"}
+#ref for data https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5470989/
+upGenes<-c("E2F1", "EZH2", "FOXM1", "MYBL2", "PLK1")
+dwnGenes<-c("SCARA5", "MYOM1", "NKAPL", "PEG3", "USP2")
+
+
+ntUP<-as.data.frame(t(brcaexp_nontumor[upGenes,]))
+colnames(ntUP)<-upGenes
+ntUP<-ntUP%>%mutate(source="Non-Tumor")
+tdataUP<-as.data.frame(t(brcaexp_tumor[upGenes,]))
+colnames(tdataUP)<-upGenes
+tdataUP<-tdataUP%>%mutate(source="Tumor")
+
+diffExpgenes<-bind_rows(ntUP,tdataUP)
+dodge <- position_dodge(width = 0.5)
+
+p1<-ggplot(melt(diffExpgenes), aes(x=factor(variable),y=value,fill=factor(source)))+geom_violin(position = dodge)+geom_boxplot(width=.1, outlier.colour=NA, position = dodge)+scale_y_log10()+theme(legend.position = "top")+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+scale_fill_brewer(palette="Set1")
+
+#for down regulated in cancer
+ntDWN<-as.data.frame(t(brcaexp_nontumor[dwnGenes,]))
+colnames(ntDWN)<-dwnGenes
+ntDWN<-ntDWN%>%mutate(source="Non-Tumor")
+tdataDWN<-as.data.frame(t(brcaexp_tumor[dwnGenes,]))
+colnames(tdataDWN)<-dwnGenes
+tdataDWN<-tdataDWN%>%mutate(source="Tumor")
+diffExpgenesDWN<-bind_rows(ntDWN,tdataDWN)
+
+
+p2<-ggplot(melt(diffExpgenesDWN), aes(x=factor(variable),y=value,fill=factor(source)))+geom_violin(position = dodge)+geom_boxplot(width=.1, outlier.colour=NA, position = dodge)+scale_y_log10()+theme(legend.position = "top")+
+  theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+scale_fill_brewer(palette="Set1")
+
+grid.arrange(p1, p2, nrow = 1)
+
+```
+
+## Comparing expression of mutated BRCA genes with other cancer types
+
+Finally, we wanted to see expression of genes in different cancer types.
+
+```{r,message=FALSE,warning=FALSE,results="hide"}
+#download more expression data
+#read tumor data for brca,liver,stomach,colon,Lung
+brca <- brcaexp_tumor
+
+coad<-read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/coad-rsem-fpkm-tcga.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
+coadRownames<-coad$Hugo_Symbol
+coad<-coad[,3:dim(coad)[2]]
+rownames(coad)<-coadRownames
+
+lihc<-read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/lihc-rsem-fpkm-tcga.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
+lihcRownames<-lihc$Hugo_Symbol
+lihc<-lihc[,3:dim(lihc)[2]]
+rownames(lihc)<-lihcRownames
+
+luad<-read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/luad-rsem-fpkm-tcga.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
+luadRownames<-luad$Hugo_Symbol
+luad<-luad[,3:dim(luad)[2]]
+rownames(luad)<-luadRownames
+
+stad<-read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/stad-rsem-fpkm-tcga.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
+stadRownames<-stad$Hugo_Symbol
+stad<-stad[,3:dim(stad)[2]]
+rownames(stad)<-stadRownames
+
+topGenes<-c("PIK3CA","TP53","GATA3","CDH1","MAP3K1","PTEN")
+expVals<-c()
+temp<-t(brca[topGenes,])
+colnames(temp)<-topGenes
+meanbrca<-colMeans(temp)
+
+temp<-t(coad[topGenes,])
+colnames(temp)<-topGenes
+meancoad<-colMeans(temp)
+
+temp<-t(lihc[topGenes,])
+colnames(temp)<-topGenes
+meanlihc<-colMeans(temp)
+
+temp<-t(luad[topGenes,])
+colnames(temp)<-topGenes
+meanluad<-colMeans(temp)
+
+temp<-t(stad[topGenes,])
+colnames(temp)<-topGenes
+meanstad<-colMeans(temp)
+```
+
+```{r fig8, fig.width=10, fig.height=8,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig8}plotting express tissue"}
+
+organs<-c("breast","colon","liver","lung","stomach")
+type<-c( "other","digestion","digestion","respiratory","digestion")
+colour<-c("#41ab5d","orange","orange","steelblue","orange")
+
+
+plots<-list() 
+for(i in 1:6){
+  vals<-c(meanbrca[i],meancoad[i],meanlihc[i],meanluad[i],meanstad[i])
+  gganatogramData<-data.frame(organ=organs,type=type,colour=colour,value=as.numeric(vals),stringsAsFactors=F)
+  
+  p<-gganatogram(data=gganatogramData, fillOutline='#a6bddb', organism='human', sex='female', fill="value")+ 
+    theme_void()+  scale_fill_gradient(low = "yellow", high = "red",name= paste(topGenes[i],"(fpkm)"))+theme(legend.text = element_text(size=15,face = "bold"),legend.position = c(0.75, 0.2))
+  
+  plots[[i]]<-p
+}
+
+n <- length(plots)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(plots, ncol=3))
+
+```
+
+The plots in fig shows that 
 
 # Conclusion
 

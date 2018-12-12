@@ -85,8 +85,20 @@ vals<-c(meanbrca[i],meancoad[i],meanlihc[i],meanluad[i],meanstad[i])
 gganatogramData<-data.frame(organ=organs,type=type,colour=colour,value=as.numeric(vals),stringsAsFactors=F)
 
 gganatogram(data=gganatogramData, fillOutline='#a6bddb', organism='human', sex='female', fill="value")+ 
-  theme_void()+  scale_fill_gradient(low = "yellow", high = "red",name= paste(topGenes[i],"(fpkm)"))+theme(legend.text = element_text(size=12,face = "bold"),legend.position = c(0.75, 0.2))
+  theme_void()+  scale_fill_gradient(low = "yellow", high = "red",name= paste(topGenes[i],"(fpkm)"))+theme(legend.text = element_text(size=15,face = "bold"),legend.position = c(0.75, 0.2))
+
+plots<-list() 
+for(i in 1:10){
+  vals<-c(meanbrca[i],meancoad[i],meanlihc[i],meanluad[i],meanstad[i])
+  gganatogramData<-data.frame(organ=organs,type=type,colour=colour,value=as.numeric(vals),stringsAsFactors=F)
   
+  p<-gganatogram(data=gganatogramData, fillOutline='#a6bddb', organism='human', sex='female', fill="value")+ 
+    theme_void()+  scale_fill_gradient(low = "yellow", high = "red",name= paste(topGenes[i],"(fpkm)"))+theme(legend.text = element_text(size=15,face = "bold"),legend.position = c(0.75, 0.2))
+  
+  plots[[i]]<-p
+}
 
-
-
+grid.arrange(p, p, nrow = 1)
+n <- length(plots)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(plots, ncol=5))

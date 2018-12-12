@@ -54,7 +54,8 @@ ggplot(melt(topCombined), aes(x=factor(variable),y=value,fill=factor(source)))+g
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+
+  scale_fill_brewer(palette="Set1")
 
 
 #ref for data https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5470989/
@@ -76,7 +77,7 @@ ggplot(melt(diffExpgenes), aes(x=factor(variable),y=value,fill=factor(source)))+
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+scale_fill_brewer(palette="Set1")
 
 #for down regulated in cancer
 ntDWN<-as.data.frame(t(brca_nontumor[dwnGenes,]))
@@ -92,6 +93,6 @@ ggplot(melt(diffExpgenesDWN), aes(x=factor(variable),y=value,fill=factor(source)
   theme(axis.text.x = element_text(angle=45,size = 15,face = "bold"),axis.text.y = element_text(size = 10,face = "bold"),panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")
+        panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ scale_fill_discrete(name = "Gene")+ylab("log(expression)")+xlab("")+scale_fill_brewer(palette="Set1")
 
 
