@@ -133,7 +133,31 @@ maftest<-brcaMAF %>% filter(Hugo_Symbol %in% topGenes$Hugo_Symbol & Variant_Clas
 #for fill colors
 library("RColorBrewer", lib.loc="~/R/win-library/3.5")
 colourCount = length(unique(maftest$Variant_Classification))
-getPalette = colorRampPalette(brewer.pal(9, "Dark2"))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+# assign colors manually to be consistent with missing data
+variants<-c(
+  "Missense_Mutation",
+  "Silent",
+  "3'UTR",
+  "Nonsense_Mutation",
+  "5'Flank",
+  "Intron",
+  "Splice_Region",
+  "RNA",
+  "5'UTR",
+  "Splice_Site",
+  "In_Frame_Del",
+  "Frame_Shift_Ins",
+  "Frame_Shift_Del",
+  "In_Frame_Ins",
+  "3'Flank",
+  "Nonstop_Mutation",
+  "Translation_Start_Site",
+  "IGR"
+)
+colourCount= length(unique(variants))
+palette <- getPalette(colourCount)
+names(palette)<-variants
 
 ggplot(data=maftest,aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar(stat = "count")+ scale_x_discrete(limits = rev(topGenes$Hugo_Symbol))+coord_flip()+
   theme(legend.position = "top",legend.text = element_text(size = 11),legend.title = element_blank())+
@@ -141,9 +165,89 @@ ggplot(data=maftest,aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar(sta
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ 
-    ylab("")+xlab("")+scale_fill_manual(values = getPalette(colourCount))
+    ylab("")+xlab("")+scale_fill_manual(values = palette)+ ggtitle("Petal and sepal length of iris")
 
 
-plotGeneVarFreq<-function(mafList)
+plotGeneVarFreq<-function(mafList){
+  #for each item in list 
+  lnames<-names(mafList)
+  plotList<-list()
+  k<-1
+  plist<-list()
+  getPalette = colorRampPalette(brewer.pal(9, "Paired"))
+  # assign colors manually to be consistent with missing data
+  variants<-c(
+    "Missense_Mutation",
+    "Silent",
+    "3'UTR",
+    "Nonsense_Mutation",
+    "5'Flank",
+    "Intron",
+    "Splice_Region",
+    "RNA",
+    "5'UTR",
+    "Splice_Site",
+    "In_Frame_Del",
+    "Frame_Shift_Ins",
+    "Frame_Shift_Del",
+    "In_Frame_Ins",
+    "3'Flank",
+    "Nonstop_Mutation",
+    "Translation_Start_Site",
+    "IGR"
+  )
+  colourCount= length(unique(variants))
+  palette <- getPalette(colourCount)
+  names(palette)<-variants
+  
+  for(i in lnames){
+    print((i))
+    print(dim(l1[[i]]))
+    if(dim(l1[[i]])[1]<1){
+      next
+    }
+    
+    #find top mutated genes
+    thisMaf<-mafList[[i]]
+    topGenes<-thisMaf %>% filter(Variant_Classification != "Silent") %>% select(Hugo_Symbol) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=10)
+    maftest<-thisMaf %>% filter(Hugo_Symbol %in% topGenes$Hugo_Symbol & Variant_Classification != "Silent") %>% select(Hugo_Symbol,Variant_Classification) 
+    
+    
+    p<-ggplot(data=maftest,aes(x=Hugo_Symbol,fill=Variant_Classification))+geom_bar(stat = "count")+ scale_x_discrete(limits = rev(topGenes$Hugo_Symbol))+coord_flip()+
+      theme(legend.position = "right")+
+      theme(axis.text.x = element_text(size = 11,face = "bold"),axis.text.y = element_text(size = 11,face = "bold"),panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank(), axis.title=element_text(size=12,face="bold"))+ 
+      ylab("")+xlab("")+scale_fill_manual(values = palette)+ ggtitle(i)
+    
+    plist[[k]]<-p
+    k=k+1
+    
+  }
+  #arrange plots on a grid
+  do.call("grid_arrange_shared_legend", c(plist))
+  
+  
+}
 
+#plot on a grid with single legend
+#function reference https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
+grid_arrange_shared_legend <- function(...) {
+  plots <- list(...)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  grid.arrange(
+    do.call(arrangeGrob, lapply(plots, function(x)
+      x + theme(legend.position="none"))),
+    legend,
+    ncol = 1,
+    heights = unit.c(unit(1, "npc") - lheight, lheight))
+}
+
+names(l1)
+l1<-l1[c("white","black or african american","asian" )]
+l1[[1]]
+plotGeneVarFreq(l1)
 

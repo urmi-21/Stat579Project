@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE, cache=FALSE,message=FALSE}
 #knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = T)
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = F)
 
 #if not installed --> install
 
@@ -23,6 +23,8 @@ library(ggplot2)
 library(gganatogram)
 library(viridis)
 library(gridExtra)
+library(grid)
+library(RColorBrewer)
 
 ```
 
@@ -185,43 +187,152 @@ First, we looked at the mutation data to find which genes are highly mutated in 
 
 ```{r,message=FALSE,warning=FALSE,results="hide"}
 #function to take a list of maf files and summarize them
-plotmafSummaryList<-function(mafList){
-  l1<-mafList
-  #for each item in list do calculations
-  lnames<-names(l1)
-  plotList<-list()
-  k<-1
-  plist<-list()
-  for(i in lnames){
-    print((i))
-    print(dim(l1[[i]]))
-    if(dim(l1[[i]])[1]<1){
-      next
-    }
-    #plot summary and save to pdf
-    maf<-read.maf(l1[[i]],isTCGA = T)
-    plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F, top = 10)
-    mtext(paste("Mutation summary by",i), outer=T,  cex=NA, line=-1.0,side = 3)
-  }
-  
+plotmafSummaryList <- function(mafList) {
+l1 <- mafList
+#for each item in list do calculations
+lnames <- names(l1)
+plotList <- list()
+k <- 1
+plist <- list()
+for (i in lnames) {
+print((i))
+print(dim(l1[[i]]))
+if (dim(l1[[i]])[1] < 1) {
+next
+}
+#plot summary and save to pdf
+maf <- read.maf(l1[[i]], isTCGA = T)
+plotmafSummary(
+maf = maf,
+rmOutlier = TRUE,
+addStat = 'median',
+dashboard = T,
+titvRaw = FALSE,
+showBarcodes = F,
+top = 10
+)
+mtext(
+paste("Mutation summary by", i),
+outer = T,
+cex = NA,
+line = -1.0,
+side = 3
+)
+}
+
 }
 
 #split maf file into categories by a given variable in the clinical metadata file
-splitMafby<-function(clinicalData,by,mafData){
-  #get tumor samps fo different values of by
-  myList<-list()
-  uniqVals<-clinicalData%>%select(by)%>%unique
-  for(i in 1:nrow(uniqVals)){
-    #i<-1
-    s<-as.character(uniqVals[i,1])
-    print(s)
-    tList<-clinicalData %>% filter(clinicalData[,by]==s) %>% select(Tumor_Sample_Barcode)%>%unique
-    thisData<-mafData%>%filter(Tumor_Sample_Barcode %in% tList$Tumor_Sample_Barcode)
-    myList[[s]]<-thisData
-  }
-  
-  return(myList)
+splitMafby <- function(clinicalData, by, mafData) {
+#get tumor samps fo different values of by
+myList <- list()
+uniqVals <- clinicalData %>% select(by) %>% unique
+for (i in 1:nrow(uniqVals)) {
+#i<-1
+s <- as.character(uniqVals[i, 1])
+print(s)
+tList <-
+clinicalData %>% filter(clinicalData[, by] == s) %>% select(Tumor_Sample_Barcode) %>%
+unique
+thisData <-
+mafData %>% filter(Tumor_Sample_Barcode %in% tList$Tumor_Sample_Barcode)
+myList[[s]] <- thisData
 }
+
+return(myList)
+}
+
+#function to plot top mutated genes with ggplot
+plotGeneVarFreq <- function(mafList) {
+#for each item in list
+lnames <- names(mafList)
+plotList <- list()
+k <- 1
+plist <- list()
+getPalette = colorRampPalette(brewer.pal(9, "Paired"))
+# assign colors manually to be consistent with missing data
+variants <- c(
+"Missense_Mutation",
+"Silent",
+"3'UTR",
+"Nonsense_Mutation",
+"5'Flank",
+"Intron",
+"Splice_Region",
+"RNA",
+"5'UTR",
+"Splice_Site",
+"In_Frame_Del",
+"Frame_Shift_Ins",
+"Frame_Shift_Del",
+"In_Frame_Ins",
+"3'Flank",
+"Nonstop_Mutation",
+"Translation_Start_Site",
+"IGR"
+)
+colourCount = length(unique(variants))
+palette <- getPalette(colourCount)
+names(palette) <- variants
+
+for (i in lnames) {
+print((i))
+print(dim(l1[[i]]))
+if (dim(l1[[i]])[1] < 1) {
+next
+}
+
+#find top mutated genes
+thisMaf <- mafList[[i]]
+topGenes <-
+thisMaf %>% filter(Variant_Classification != "Silent") %>% select(Hugo_Symbol) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=10)
+maftest <- thisMaf %>% filter(Hugo_Symbol %in% topGenes$Hugo_Symbol & Variant_Classification != "Silent") %>% select(Hugo_Symbol, Variant_Classification)
+
+
+p <-
+ggplot(data = maftest, aes(x = Hugo_Symbol, fill = Variant_Classification)) +
+geom_bar(stat = "count") + scale_x_discrete(limits = rev(topGenes$Hugo_Symbol)) +
+coord_flip() +
+theme(legend.position = "right") +
+theme(
+axis.text.x = element_text(size = 11, face = "bold"),
+axis.text.y = element_text(size = 11, face = "bold"),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.title = element_text(size = 12, face = "bold")
+) +
+ylab("") + xlab("") + scale_fill_manual(values = palette) + ggtitle(i)
+
+plist[[k]] <- p
+k = k + 1
+
+}
+#arrange plots on a grid
+do.call("grid_arrange_shared_legend", c(plist))
+
+
+}
+
+#plot on a grid with single legend
+#function reference https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
+grid_arrange_shared_legend <- function(...) {
+plots <- list(...)
+g <-
+ggplotGrob(plots[[1]] + theme(legend.position = "bottom"))$grobs
+legend <- g[[which(sapply(g, function(x)
+x$name) == "guide-box")]]
+lheight <- sum(legend$height)
+grid.arrange(
+do.call(arrangeGrob, lapply(plots, function(x)
+x + theme(legend.position = "none"))),
+legend,
+ncol = 1,
+heights = unit.c(unit(1, "npc") - lheight, lheight)
+)
+}
+
 ```
 
 ```{r fig1, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig1}plotting example"}
@@ -236,12 +347,12 @@ We found that
 
 Next we looked at how the gene mutations differ for different categories e.g gender, race cancer type etc. First, we looked at which genes were mutated for samples from different race.
 
-```{r fig2, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting examplerace"}
+```{r fig2, fig.width=10, fig.height=12,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting examplerace"}
 #split the maf data by clinical.race and plot summary for each category
 l1<-splitMafby(brcaDF,"clinical.race",brcaMAF)
-plotmafSummaryList(l1)
-
-print(length(l1))
+#plot only white black and asian as others are not reported
+l1<-l1[c("white","black or african american","asian" )]
+plotGeneVarFreq(l1)
 
 ```
 
@@ -253,7 +364,7 @@ Then, we looked at how genes are mutated for top two cancer types i.e. ductal ca
 #split the maf data by clinical.race and plot summary for each category
 filterList<- brcaDF %>% select(clinical.primary_diagnosis) %>% count %>% arrange(desc(freq)) %>% top_n(n=2)
 l2<-splitMafby(brcaDF%>%filter(clinical.primary_diagnosis %in% filterList$clinical.primary_diagnosis),"clinical.primary_diagnosis",brcaMAF)
-plotmafSummaryList(l2)
+plotGeneVarFreq(l2)
 ```
 
 Finally, we looked at if there is a difference in the set of genes mutated by gender.
@@ -261,7 +372,7 @@ Finally, we looked at if there is a difference in the set of genes mutated by ge
 ```{r fig4, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide"}
 #split the maf data by clinical.race and plot summary for each category
 l3<-splitMafby(brcaDF,"clinical.gender",brcaMAF)
-plotmafSummaryList(l3)
+plotGeneVarFreq(l3)
 ```
 
 From the analysis above we noticed that BRCA1 and BRCA2 are not in the set of top mutated genes. These genes are known to be associated with cancer and a mutation in these genes can increase the risk of breast and ovarian cancer in women. We then compared how many mutations were associated with BRCA1 and BRCA2.
