@@ -5,10 +5,22 @@ date: "December 8, 2018"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE, cache=TRUE,message=FALSE}
+```{r setup, include=FALSE, cache=FALSE,message=FALSE}
 #knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = TRUE)
+
+#required packages
+library(TCGAbiolinks)
+library(dplyr)
+library(DT)
+library(data.table)
+library(plyr)
+library(maftools) 
+library("readr")
+library(ggplot2)
 ```
+
+
 
 # Introduction
 
@@ -38,24 +50,27 @@ Finally, I collected the gene expression data  from (Wang et. al. 2018). This da
 
 ## Data downloading and processing
 
-This section describes how the data was downloaded and pre-processed for further analysis.
+This section describes how the data was downloaded and pre-processed.
 
 ### Downloading clinical data from TCGA
 
 We used the TCGABiolinks package to download TCGA data. The function *GDCquery_clinic* is used to download the data. We wrote additional functions to clean the data and arrange it into a dataframe.
 
-```{r,message=FALSE,cache=TRUE}
-#required packages
-library(TCGAbiolinks)
-library(dplyr)
-library(DT)
-library(data.table)
-library(plyr)
-library(maftools)
-library("readr")
-library(ggplot2)
-
-colsToKeep<-c("clinical.submitter_id","clinical.classification_of_tumor","clinical.primary_diagnosis","clinical.tumor_stage","clinical.age_at_diagnosis","clinical.vital_status","clinical.days_to_death","clinical.tissue_or_organ_of_origin","clinical.days_to_birth","clinical.site_of_resection_or_biopsy","clinical.days_to_last_follow_up","clinical.cigarettes_per_day","clinical.weight","clinical.alcohol_history","clinical.bmi","clinical.years_smoked","clinical.height","clinical.gender","clinical.year_of_birth","clinical.race","clinical.ethnicity","clinical.year_of_death","clinical.bcr_patient_barcode","clinical.disease","submitter_id","sample_type","tissue_type","portions.submitter_id","portions.analytes.analyte_type","portions.analytes.submitter_id","portions.analytes.analyte_type_id","portions.analytes.aliquots.analyte_type","portions.analytes.aliquots.submitter_id")
+```{r,message=FALSE}
+colsToKeep<-c("clinical.submitter_id","clinical.classification_of_tumor",
+              "clinical.primary_diagnosis","clinical.tumor_stage",
+              "clinical.age_at_diagnosis","clinical.vital_status",
+              "clinical.days_to_death","clinical.tissue_or_organ_of_origin",
+              "clinical.days_to_birth","clinical.site_of_resection_or_biopsy",
+              "clinical.days_to_last_follow_up","clinical.cigarettes_per_day",
+              "clinical.weight","clinical.alcohol_history","clinical.bmi",
+              "clinical.years_smoked","clinical.height","clinical.gender",
+              "clinical.year_of_birth","clinical.race","clinical.ethnicity",
+              "clinical.year_of_death","clinical.bcr_patient_barcode",
+              "clinical.disease","submitter_id","sample_type","tissue_type",
+              "portions.submitter_id","portions.analytes.analyte_type",
+              "portions.analytes.submitter_id","portions.analytes.analyte_type_id",
+              "portions.analytes.aliquots.analyte_type","portions.analytes.aliquots.submitter_id")
 #Function takes a df and expands it by unlisting elements at a column
 expand<-function(df,colName){
   res<-data.frame()
@@ -97,9 +112,10 @@ getjoinedBiospcClinc<-function(projName){
   finalJoined<-join(clinicalBRCA,biospecimenBRCA,by="clinical.bcr_patient_barcode")
   return(finalJoined)
 }
-########################################
+###################################################################
+projName<-"BRCA"
 ##Download only BRCA metadata
-brcaDF<-getjoinedBiospcClinc("TCGA-BRCA")
+brcaDF<-getjoinedBiospcClinc(paste("TCGA",projName,sep = "-"))
 brcaDF<-brcaDF[,colsToKeep]
 #remove cols with all NA values
 naCols<-colnames(brcaDF)[sapply(brcaDF, function(x)all(is.na(x)))]
@@ -108,49 +124,140 @@ brcaDF<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
 head(brcaDF[,1:5],3)
 ```
 
-The clinical data for BRCA studies is stored in a dataframe *brcaDF*. Next, we downloaded mutation data using TCGABiolinks. After getting the mutation data, we joined the clinical table with the mutation table to have clinical information for each mutation in the mutation table.
+The clinical data for BRCA studies is stored in a dataframe *brcaDF*. 
 
-```{r,message=FALSE,cache=TRUE,warning=FALSE,results="hide"}
-brcaMAF <- GDCquery_Maf("BRCA", pipelines = "varscan2")
+### Downloading mutation data from TCGA
+
+Next, we downloaded mutation data using TCGABiolinks. After getting the mutation data, we joined the clinical table with the mutation table to have clinical information for each mutation in the mutation table.
+
+```{r,message=FALSE,warning=FALSE,results="hide"}
+
+brcaMAF <- GDCquery_Maf(projName, pipelines = "varscan2")
 #join mutation information with the clinical data
-colnames(brcaDF)[which(colnames(brcaDF)=="portions.analytes.aliquots.submitter_id")]="Tumor_Sample_Barcode"
+colnames(brcaDF)[which(colnames(brcaDF)==
+                         "portions.analytes.aliquots.submitter_id")]="Tumor_Sample_Barcode"
 brcaMAF_MD<-join(brcaMAF,brcaDF)
 ```
 
 We now have a data frame of dimensions `r dim(brcaMAF_MD)`. This data frame contains clinical information and coressponding mutation information for each BRCA patient. We will use this data to explore various...
 
-Next, we downloaded gene expression data for the BRCA studies. 
+### Downloading gene expression data
 
-```{r,message=FALSE,cache=TRUE,warning=FALSE,results="hide"}
-#download data from github
-brca_nontumor <- read_delim("https:/raw.github.com/mskcc/RNAseqDB/blob/master/data/normalized/brca-rsem-fpkm-tcga.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
-brca_tumor <- read_delim("https:/raw.github.com/mskcc/RNAseqDB/blob/master/data/normalized/brca-rsem-fpkm-tcga-t.txt.gz", "\t", escape_double = FALSE, trim_ws = TRUE)
+Next, we downloaded the gene expression data for the BRCA studies. 
+
+```{r,message=FALSE,warning=FALSE,results="hide"}
+#download exp data from github for BRCA samples. reading files can take several minutes
+brcaexp_nontumor <- read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/brca-rsem-fpkm-tcga.txt.gz",
+                            "\t", escape_double = FALSE, trim_ws =TRUE)
+brcaexp_tumor <- read_delim("https://raw.githubusercontent.com/mskcc/RNAseqDB/master/data/normalized/brca-rsem-fpkm-tcga-t.txt.gz", 
+                         "\t", escape_double = FALSE, trim_ws = TRUE)
 
 #formatting. add row names remove extra columns
-rn<-brca_nontumor$Hugo_Symbol
-brca_nontumor<-brca_nontumor[,3:dim(brca_nontumor)[2]]
-rownames(brca_nontumor)<-rn
+rn<-brcaexp_nontumor$Hugo_Symbol
+brcaexp_nontumor<-brcaexp_nontumor[,3:dim(brcaexp_nontumor)[2]]
+rownames(brcaexp_nontumor)<-rn
 
-rn<-brca_tumor$Hugo_Symbol
-brca_tumor<-brca_tumor[,3:dim(brca_tumor)[2]]
-rownames(brca_tumor)<-rn
+rn<-brcaexp_tumor$Hugo_Symbol
+brcaexp_tumor<-brcaexp_tumor[,3:dim(brcaexp_tumor)[2]]
+rownames(brcaexp_tumor)<-rn
 
 ```
 
-We now have two expression datasets for tumor and normal or non-tumor tissues. These datasets contains the gene expression patterns over the tumor samples and normal samples. The data dimentions for tumor expression data is `r dim(brca_tumor)` and for normal expression data is `r dim(brca_nontumor)`
+We now have two expression datasets for tumor and normal or non-tumor tissues from BRCA studies. These datasets contains the gene expression patterns over the tumor samples and normal samples. Each row corresponds to a gene and each column corresponds to a sample. The data dimentions for tumor expression data is `r dim(brcaexp_tumor)` and for normal expression data is `r dim(brcaexp_nontumor)`
 
-## Processing
+
+Finally, our data consist of three data frames
+
+  1. *brcaMAF_MD* contains all the mutation information
+  2. *brcaexp_nontumor* contains the gene expression values over normal samples from TCGA
+  3. *brcaexp_tumor* contains the gene expression values over tumor samples from TCGA
 
 
 # Analysis
 
-You can also embed plots, for example:
+First, we looked at the mutation data to find which genes are highly mutated in BRCA and what types of different mutations are present in the data. We used the package *maftools* to do this analysis.
 
-```{r }
-plot(pressure)
+```{r,message=FALSE,warning=FALSE,results="hide"}
+#function to take a list of maf files and summarize them
+plotmafSummaryList<-function(mafList){
+  l1<-mafList
+  #for each item in list do calculations
+  lnames<-names(l1)
+  plotList<-list()
+  k<-0
+  par(mfrow=c(2,2))   
+  for(i in lnames){
+    print((i))
+    print(dim(l1[[i]]))
+    if(dim(l1[[i]])[1]<1){
+      next
+    }
+    #plot summary and save to pdf
+    maf<-read.maf(l1[[i]],isTCGA = T)
+    plotmafSummary(maf = maf, rmOutlier = TRUE, addStat = 'median', dashboard = T, titvRaw = FALSE,showBarcodes=F, top = 10)
+    mtext(paste("Mutation summary by",i), outer=T,  cex=NA, line=-1.0,side = 3)
+  }
+  par(mfrow=c(1,1))   
+}
+
+#split maf file into categories by a given variable in the clinical metadata file
+splitMafby<-function(clinicalData,by,mafData){
+  #get tumor samps fo different values of by
+  myList<-list()
+  uniqVals<-clinicalData%>%select(by)%>%unique
+  for(i in 1:nrow(uniqVals)){
+    #i<-1
+    s<-as.character(uniqVals[i,1])
+    print(s)
+    tList<-clinicalData %>% filter(clinicalData[,by]==s) %>% select(Tumor_Sample_Barcode)%>%unique
+    thisData<-mafData%>%filter(Tumor_Sample_Barcode %in% tList$Tumor_Sample_Barcode)
+    myList[[s]]<-thisData
+  }
+  
+  return(myList)
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r fig1, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig1}plotting example"}
+#plot summary for full dataset
+tempList<-list()
+tempList[["BRCA"]]<-brcaMAF
+plotmafSummaryList(tempList)
+
+```
+
+We found that
+
+Next we looked at how the gene mutations differ for different categories e.g gender, race cancer type etc. First, we looked at which genes were mutated for samples from different race.
+
+```{r fig2, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting examplerace"}
+#split the maf data by clinical.race and plot summary for each category
+l1<-splitMafby(brcaDF,"clinical.race",brcaMAF)
+plotmafSummaryList(l1)
+
+print(length(l1))
+
+```
+
+We found that
+
+Then, we looked at how genes are mutated for top two cancer types i.e. ductal carcinoma and lobular carcinoma.
+
+```{r fig3, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide"}
+#split the maf data by clinical.race and plot summary for each category
+filterList<- brcaDF %>% select(clinical.primary_diagnosis) %>% count %>% arrange(desc(freq)) %>% top_n(n=2)
+l2<-splitMafby(brcaDF%>%filter(clinical.primary_diagnosis %in% filterList$clinical.primary_diagnosis),"clinical.primary_diagnosis",brcaMAF)
+plotmafSummaryList(l2)
+```
+
+Finally, we looked at if there is a difference in the set of genes mutated by gender.
+
+```{r fig4, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide"}
+#split the maf data by clinical.race and plot summary for each category
+l3<-splitMafby(brcaDF,"clinical.gender",brcaMAF)
+plotmafSummaryList(l3)
+```
+
 
 
 # Conclusion
