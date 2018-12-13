@@ -201,15 +201,16 @@ plotGeneVarFreq<-function(mafList){
   names(palette)<-variants
   
   for(i in lnames){
-    print((i))
-    print(dim(l1[[i]]))
-    if(dim(l1[[i]])[1]<1){
+    print(i)
+    print(dim(mafList[[i]]))
+    if(dim(mafList[[i]])[1]<1){
       next
     }
     
     #find top mutated genes
     thisMaf<-mafList[[i]]
     topGenes<-thisMaf %>% filter(Variant_Classification != "Silent") %>% select(Hugo_Symbol) %>% group_by(Hugo_Symbol) %>% count %>% arrange(desc(freq)) %>% top_n(n=10)
+    print(topGenes)
     maftest<-thisMaf %>% filter(Hugo_Symbol %in% topGenes$Hugo_Symbol & Variant_Classification != "Silent") %>% select(Hugo_Symbol,Variant_Classification) 
     
     
@@ -251,3 +252,10 @@ l1<-l1[c("white","black or african american","asian" )]
 l1[[1]]
 plotGeneVarFreq(l1)
 
+filterList<- brcaMAF_MD %>% select(clinical.primary_diagnosis) %>% count %>% arrange(desc(freq)) %>% top_n(n=2)
+l2<-splitMafby(TCGAbrcaMetadata_reduced%>%filter(clinical.primary_diagnosis %in% filterList$clinical.primary_diagnosis),"clinical.primary_diagnosis",brcaMAF)
+names(l2)
+plotGeneVarFreq(l2)
+
+l3<-splitMafby(TCGAbrcaMetadata_reduced,"clinical.gender",brcaMAF)
+plotGeneVarFreq(l3)
