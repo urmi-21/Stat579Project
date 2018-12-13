@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE, cache=FALSE,message=FALSE}
 #knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE,cache = T,tidy.opts=list(width.cutoff=60),tidy=TRUE)
+knitr::opts_chunk$set(echo = F,message = FALSE,warning = FALSE,cache = F,tidy.opts=list(width.cutoff=60),tidy=TRUE,fig.pos= "h")
 
 
 #if not installed --> install
@@ -33,13 +33,10 @@ library(RColorBrewer)
 
 # Introduction
 
-Our data consists of gene expression data from various samples collected to study breast cancer (Breast Invasive Carcinoma). These samples were collected from a number of different individuals. Then, the samples' RNA were extracted sequenced to get RNA-seq reads from the sample. Using the RNA-seq, the gene expression was estimated. However, we used the data from (Wang et. al. 2018) where the expression data was mapped and normalized again to remove batch effects, which made the dataset comparable across the samples.
-Apart from the gene expression data for each sample, we also have associated metadata for each sample. This metadata provides information about the individual, tissue, disease etc.associated with each sample.
+Cancer is a serious and potentially life-threatning disease. Each year the number of people diagnosed with cancer are increasing and this number is expected to increase rapidly in coming years. In 2018, an estimated 1,735,350 new cases of cancer will be diagnosed  and 609,640 people will die from the disease in the United States alone. By the year 2030 we expect to see 23.6 million cancer cases per year worldwide. As of 2018, breast cancer (BRCA) is the most common cancer after lung and prostate cancer. In order to provide effective treatment for cancer, researchers must fully understand  this disease at the genomic level. To do so, The Cancer Genome Atlas (TCGA) project started in 2005 which has a catalogue of genomic data collected from cancer patients. 
 
-Our dataset has expression estimates of around 20,000 genes across 1,092 samples. Out of these 1,092 samples, 982 had tumor and 110 were normal tissues without tumor. We also added the gene metadata to our dataset which describes the gene features and functions. This also includes mutation information of the genes. This information can provide crucial information about how different mutations in the genome can lead to cancer.
-
-Overall, our dataset is GxS matrix where each row corresponds to a gene and each column corresponds to a RNA-seq sample. Additionally, we have metadata for all the rows and all the columns.
-
+In this project analysed data from xxx and TCGA. Fisrt, we summarized cancer statistics from the xxx data and look at the different trends of various cancer cases and if they correlate with any other factor like gender, age, geographic location etc.
+Next, we collected BRCA data from TCGA in order to find associations between various clinical attributes, gene mutations, and gene expression. We found that for different clinical attributes, the sets of genes are highly mutated in BRCA could be different. The most common type of mutation in all these sets remains to be missense mutation. We also looked at the expression patterns of BRCA associated genes in tumor and normal samples.
 
 # Data
 
@@ -48,24 +45,17 @@ We used data from TCGA. TCGA is a comprehensive repository of human cancer molec
 * Clinical information about participants
 * Metadata about the samples (e.g. the weight of a sample portion, etc.)
 * Histopathology slide images from sample portions
-* Molecular information derived from the samples (e.g. mRNA/miRNA expression, protein expression, copy number, etc.)
+* Molecular information derived from the samples (e.g. mRNA/miRNA expression, protein expression, copy number, etc.)   
 
+We downloaded three types of data i.e. clinical data, mutation data and gene expression data. The clinical data contains information about each patient who participated in the study. It includes variables like gender, age, race, cancer type etc. The mutation data contains data on the mutated genes for each cancer patient. This includes name of the genes mutated, mutation classification, mutation type etc.   
+Finally, the gene expression data has the level of gene expression quantified in RNA samples from each patient. TCGA has tumor samples for each patient and where possible, a non-tumor/normal sample is also present. Thus, we have gene expression data for both tumor and normal tissues, although the number of normal samples are much less. Instead of directly using gene expression data from TCGA, we downloaded data from Wang et. al. 2018. This data was created by processing TCGA data. This data was normalized and corrected for batch effects and thus is comparable accross different samples.
 
-
-First, we collected data clinical data from TCGA for breast cancer (BRCA) studies. This data contains
-Then we downloaded the mutation information for the BRCA studies. This data
-Finally, I collected the gene expression data  from (Wang et. al. 2018). This data contains the estimated expression values of genes in the BRCA study. This data was normalized and batch corrected so it is comparable across different TCGA samples.
-
-
-## Data downloading and processing
-
-This section describes how the data was downloaded and pre-processed.
 
 ### Downloading clinical data from TCGA
 
 We used the TCGABiolinks package to download TCGA data. The function *GDCquery_clinic* is used to download the data. We wrote additional functions to clean the data and arrange it into a dataframe.
 
-```{r,message=FALSE}
+```{r,message=FALSE,warning=FALSE,results="hide"}
 colsToKeep<-c("clinical.submitter_id","clinical.classification_of_tumor",
               "clinical.primary_diagnosis","clinical.tumor_stage",
               "clinical.age_at_diagnosis","clinical.vital_status",
@@ -132,11 +122,10 @@ brcaDF<-brcaDF[,!(colnames(brcaDF) %in% naCols)]
 
 ```
 
-The clinical data for BRCA studies is stored in a dataframe *brcaDF*. 
 
 ### Downloading mutation data from TCGA
 
-Next, we downloaded mutation data using TCGABiolinks. After getting the mutation data, we joined the clinical table with the mutation table to have clinical information for each mutation in the mutation table.
+Next, we downloaded mutation data using TCGABiolinks' *GDCquery_Maf* function. After getting the mutation data, we joined the clinical table with the mutation table to have clinical information for each mutation in the mutation table.
 
 ```{r,message=FALSE,warning=FALSE,results="hide"}
 
@@ -147,7 +136,7 @@ colnames(brcaDF)[which(colnames(brcaDF)==
 brcaMAF_MD<-join(brcaMAF,brcaDF)
 ```
 
-We now have a data frame of dimensions `r dim(brcaMAF_MD)`. This data frame contains clinical information and coressponding mutation information for each BRCA patient. We will use this data to explore various...
+We now have a data frame of dimensions `r dim(brcaMAF_MD)`. This data frame contains clinical information and coressponding mutation information for each BRCA patient. 
 
 ### Downloading gene expression data
 
@@ -174,18 +163,17 @@ rownames(brcaexp_tumor)<-rn
 We now have two expression datasets for tumor and normal or non-tumor tissues from BRCA studies. These datasets contains the gene expression patterns over the tumor samples and normal samples. Each row corresponds to a gene and each column corresponds to a sample. The data dimentions for tumor expression data is `r dim(brcaexp_tumor)` and for normal expression data is `r dim(brcaexp_nontumor)`
 
 
-Finally, our data consist of three data frames
-
-  1. *brcaMAF_MD* contains all the mutation information
-  2. *brcaexp_nontumor* contains the gene expression values over normal samples from TCGA
-  3. *brcaexp_tumor* contains the gene expression values over tumor samples from TCGA
 
 
 # Analysis
 
+We did some exploratory data analysis on our data in order to find associations between various clinical attributes, gene mutations, and gene expression.
+
+## Mutations in genes
+
 First, we looked at the mutation data to find which genes are highly mutated in BRCA and what types of different mutations are present in the data. We used the package *maftools* to plot a summary of the BRCA mutation dataset.
 
-```{r,message=FALSE,warning=FALSE,results="hide"}
+```{r,message=FALSE,warning=FALSE,results="hide",echo=FALSE}
 #function to take a list of maf files and summarize them
 plotmafSummaryList <- function(mafList) {
 l1 <- mafList
@@ -342,11 +330,11 @@ plotmafSummaryList(tempList)
 
 ```
 
-Figure \ref{fig:fig1} shows the summary plot generated by maftools. From the plot we can see that majority of mutations are of type missense mutation. Missense mutation can change the amino acid sequence of the protein coded by the mutated gene making an unstable protein. After missense mutations we see a lot of nonsense mutations. A gene with nonsense mutation produces a truncated protein which is usually non-functional. We also found that, most variant types are Single Neucleotide Polymorphisms (SNPs). These variants are a result of mutation of only a single neucleotide in the DNA. SNPs can have deletarious effects if they result in missense or nonsense mutations. We also found the top 10 genes with highest number of mutations reported. Out of these genes PIK3CA, TP53, CDH1 and PTEN are already known to be associated with cancer.  
+Figure \ref{fig:fig1} shows the summary plot generated by maftools. From the plot we can see that majority of mutations are of type missense mutation. Missense mutation can change the amino acid sequence of the protein coded by the mutated gene making an unstable protein product. After missense mutations, we see a lot of nonsense mutations. A gene with nonsense mutation produces a truncated protein which is usually non-functional. We also found that, most variant types are Single Neucleotide Polymorphisms (SNPs). These variants are a result of mutation of only a single neucleotide in the DNA. SNPs can have deletarious effects if they result in missense or nonsense mutations. We also found the top 10 genes with highest number of mutations. Out of these genes PIK3CA, TP53, CDH1 and PTEN are already known to be associated with cancer.  
 
-Next we looked at how the gene mutations differ for different categories. First, We looked at which genes were mutated for samples from different race. 
+Next, we looked at how the gene mutations differ for different categories. First, We looked at which genes were mutated for samples from different race. 
 
-```{r fig2, fig.width=8, fig.height=8,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting by race"}
+```{r fig2, fig.width=8, fig.height=10,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}Top mutated genes by race"}
 #split the maf data by clinical.race and plot summary for each category
 l1<-splitMafby(brcaDF,"clinical.race",brcaMAF)
 #plot only white black and asian as others are not reported
@@ -355,22 +343,22 @@ plotGeneVarFreq(l1)
 
 ```
 
-Figure \ref{fig:fig2} shows the top mutated genes for each race.  
+Figure \ref{fig:fig2} shows the top mutated genes for each race.  PIK3CA and TP53 genes are the most mutated for each category. There are unique genes too for each category e.g. MUC16 for white, DNM1p47 for black/african american and C5orf42 for asian populations. We also found majority of mutations are of type missense mutation for each category.   
 
 Then, we looked at how genes are mutated for the two most common breast cancer types i.e. ductal carcinoma and lobular carcinoma.
 
-```{r fig3, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide",fig.cap="\\label{fig:fig3}plotting by cancer"}
+```{r fig3, fig.width=8, fig.height=8,cache=FALSE,warning=FALSE,message=FALSE,results="hide",fig.cap="\\label{fig:fig3}Top mutated genes by cancer type"}
 #split the maf data by clinical.race and plot summary for each category
 filterList<- brcaDF %>% select(clinical.primary_diagnosis) %>% count %>% arrange(desc(freq)) %>% top_n(n=2)
 l2<-splitMafby(brcaDF%>%filter(clinical.primary_diagnosis %in% filterList$clinical.primary_diagnosis),"clinical.primary_diagnosis",brcaMAF)
 plotGeneVarFreq(l2)
 ```
 
-From Figure \ref{fig:fig3}  we see that, 
+Figure \ref{fig:fig3} shows the top mutated genes for ductal carcinoma and lobular carcinoma. Interestingly, the gene TP53 has lesser mutations in lobular carcinoma that in ductal carcinoma.
 
-From the analysis above we noticed that BRCA1 and BRCA2 are not in the set of top mutated genes. These genes are known to be associated with cancer and a mutation in these genes can increase the risk of breast and ovarian cancer in women. We then compared how many mutations were associated with BRCA1 and BRCA2.
+From the analysis above we noticed that BRCA1 and BRCA2 are not in the set of top mutated genes. These genes are known to be associated with cancer and a mutation in these genes can increase the risk of breast and ovarian cancer in women. To find out how many mutations belonged to BRCA1 and BRCA2 in our dataset, we plotted a barchart (Figure \ref{fig:fig3}).
 
-```{r fig5, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig2}plotting exampleBRCA"}
+```{r fig4, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig4}BRCA1/BRCA2 mutation statistics"}
 brcaMAF_MD_geneGroupBRCA<-brcaMAF_MD%>%select(Hugo_Symbol)%>%mutate(geneName=ifelse(Hugo_Symbol=="BRCA1","BRCA1",ifelse(Hugo_Symbol=="BRCA2","BRCA2","Others"))) %>%select(geneName)%>% group_by(geneName) %>% count %>% mutate(logFreq=log(freq))
 
 p1<-ggplot(data=brcaMAF_MD_geneGroupBRCA, aes(x=geneName,y=logFreq,fill=geneName))+geom_bar(stat = "identity")+theme(legend.position = "none")+
@@ -391,12 +379,13 @@ grid.arrange(p1, p2, nrow = 1)
 
 ```
 
-From figure we see that ...
+Figure \ref{fig:fig4} shows the number of mutations (log scale) in BRCA1/2 and all other genes combined and the type of mutation for BRCA1 and BRCA2 genes. We found that mutations in these two genes were very small as compared to other genes. Missense mutation is most common in these two genes too. 
 
+## Expression patterns of genes
 
-After looking at various mutated genes, we looked at the expression pattern of these genes for tumor and normal samples.
+After looking at various mutated genes, we then looked at the expression pattern of these genes. We looked at the distribution of gene expressions for tumor and normal tissues. First, we took the set of highly mutated genes in BRCA and compared their expression for tumor and normal samples.
 
-```{r fig6, fig.width=6, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig6}plotting express"}
+```{r fig5, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig5}Expression of highly mutated genes in tumor and normal samples"}
 #plot box plots of top mutated genes
 topGenes<-c("PIK3CA","TP53","TTN","GATA3","CDH1","MAP3K1","MUC16","KMT2C","MUC4","PTEN")
 nt<-as.data.frame(t(brcaexp_nontumor[topGenes,]))
@@ -404,7 +393,7 @@ colnames(nt)<-topGenes
 #tumordata
 tdata<-as.data.frame(t(brcaexp_tumor[topGenes,]))
 colnames(tdata)<-topGenes
-nt<-nt%>%mutate(source="Non-Tumor")
+nt<-nt%>%mutate(source="Normal")
 tdata<-tdata%>%mutate(source="Tumor")
 
 topCombined<-bind_rows(nt,tdata)
@@ -418,11 +407,11 @@ ggplot(melt(topCombined), aes(x=factor(variable),y=value,fill=factor(source)))+g
 
 ```
 
-From fig we found that the expression of
+Figure \ref{fig:fig5} shows the boxplots for the ten genes. We can see visually that expression of genes TP53, CDH1, and MAP3K1 looks very simillar. While the expression of genes PIK3CA, TTN, GATA3 and MUC4 looks different under the two conditions. This might give some insight on how these genes play a role in cancer. A statistical test is still required to assess the significance of these differences.   
 
-After that we compiled a list of genes are known to be differentially expressed in cancer.
+After that, we compiled a list of genes are known to be differentially expressed in cancer (Li et. al. 2017). Genes which are differntially expressed could be important biomarkers and give us more insight on which biological pathways are most affected in cancer. 
 
-```{r fig7, fig.width=8, fig.height=6,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig7}plotting express"}
+```{r fig6, fig.width=10, fig.height=5,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig6}Expression of genes known to be regulated in tumor and normal samples"}
 #ref for data https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5470989/
 upGenes<-c("E2F1", "EZH2", "FOXM1", "MYBL2", "PLK1")
 dwnGenes<-c("SCARA5", "MYOM1", "NKAPL", "PEG3", "USP2")
@@ -464,9 +453,12 @@ grid.arrange(p1, p2, nrow = 1)
 
 ```
 
+Figure \ref{fig:fig6} shows violin plots for the cancer regulated genes. From the plot we can see that all the genes on the left panel appear to be downregulated and all the genes in the right panel seems to be up regulated in BRCA tumor samples as compared to normal samples.  
+
 ## Comparing expression of mutated BRCA genes with other cancer types
 
-Finally, we wanted to see expression of genes in different cancer types.
+Finally, we wanted to compare expression of highly mutated genes in BRCA with other cancers from different tissues. To do this we downloaded more expression data for four tumor from different tissues which were liver,stomach,colon, and lung cancer.  Then we looked at the mean expression of each of these genes accross different tissues.
+
 
 ```{r,message=FALSE,warning=FALSE,results="hide"}
 #download more expression data
@@ -516,7 +508,7 @@ colnames(temp)<-topGenes
 meanstad<-colMeans(temp)
 ```
 
-```{r fig8, fig.width=10, fig.height=8,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig8}plotting express tissue"}
+```{r fig7, fig.width=10, fig.height=8,cache=FALSE,warning=FALSE,message=FALSE,results="hide", fig.cap="\\label{fig:fig7}Mean expression of highly mutated BRCA genes in tumors from different tissues"}
 
 organs<-c("breast","colon","liver","lung","stomach")
 type<-c( "other","digestion","digestion","respiratory","digestion")
@@ -540,7 +532,8 @@ do.call("grid.arrange", c(plots, ncol=3))
 
 ```
 
-The plots in fig shows that 
+Figure \ref{fig:fig7} shows the mean expression of the genes in tumors from different tissues. We found that BRCA samples had higher mean expression as compared with other tissues.  
+
 
 # Conclusion
 
