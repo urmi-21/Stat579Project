@@ -85,7 +85,7 @@ by_area %>%
     group = SITE,
     color = SITE
   )) +
-  stat_summary(fun.y = sum, geom = "line")
+  stat_summary(fun.y = sum, geom = "line")+theme(axis.text.x = element_text(angle=45))
 ##Incidence by gender
 by_area %>%
   filter(SITE %in% top5$SITE & EVENT_TYPE == "Incidence") %>%
@@ -98,7 +98,8 @@ by_area %>%
   stat_summary(fun.y = sum, geom = "line") +
   facet_grid(SEX ~ .) +
   labs(x = "Type of cancer") +
-  labs(y = "Cases")
+  labs(y = "Cases")+theme(axis.text.x = element_text(angle=45))
+
 #BREAST CANCER
 byarea_BC <- by_area %>%
   subset(SITE == "Female Breast")
@@ -113,7 +114,7 @@ byarea_BC %>%
   stat_summary(fun.y = mean, geom = "line") +
   facet_grid(EVENT_TYPE ~ .) +
   labs(x = "Year") +
-  labs(y = "Rate of incidence by 100,000")
+  labs(y = "Rate of incidence by 100,000")+theme(axis.text.x = element_text(angle=45))
 ```
 
 The results showed that breast cancer is the main cancer type in women and the main cancer type overall. More than that, the number of cases of breast cancer have been increasing along the years, contrary the any other top 5 type of cancer in the country (urinary bladder, colon and rectum, prostate, lung and bronchus). Prostate cancer cases, the main type of cancer in men, is only the third type of cancer in general, behind lung and bronchus. Incidences of breast cancer are higher in white women, followed by black and asian women. In this data, hispanic women have the lower incidences of cancer. Regarding mortality, white and black women have similar rates, about 30 per 100,000 people. All the other races have similar mortality of around 10 per 100,000 people. 
@@ -676,10 +677,7 @@ Figure \ref{fig:fig7} shows the mean expression of the genes in tumors from diff
 
 # Conclusion
 
-From looking at the cancer statistics we can say that cancer is a growing problem. 
-The statistics may healp researchers, doctors and policy makers
-
-In order to find more effective methods to treat cancer, we must first fully understand the disease itself. A number of mutations in one's DNA can lead to cancer. We saw that in BRCA few genes get mutated most often like PIK3CA and TP53. We already know that mutations in these genes results in an altered protein which is not capable of normal biological function. We also need to better understand how these mutation affects the cellular pathways. Expression patterns of these genes may reveal if they are getting activated or suppressed due to cancer. Genes which are differentially regulated in cancer may prove to be important biomarkers. Studying functions of these genes may lead to new ways of stopping cancer in the body.  
+We found that cancer cases have increased over the years and similar trend is expected to continue. The various statistics from CDC data reveals a lot information about cancer. These statistics may healp researchers, doctors and policy makers to devise a plan for delivering efficient treatment for cancer.  In order to find more effective methods to treat cancer, we must first fully understand the disease itself. A number of mutations in one's DNA can lead to cancer. We saw that in BRCA few genes get mutated most often like PIK3CA and TP53. We already know that mutations in these genes results in an altered protein which is not capable of normal biological function. We also need to better understand how these mutation affects the cellular pathways. Expression patterns of these genes may reveal if they are getting activated or suppressed due to cancer. Genes which are differentially regulated in cancer may prove to be important biomarkers. Studying functions of these genes may lead to new ways of stopping cancer in the body.
 
 
 # References
