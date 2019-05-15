@@ -9,6 +9,7 @@ library(TCGAbiolinks)
 library(ggplot2)
 packageVersion("TCGAbiolinks")
 
+
 ###########################################define functions##############################################################
 #split maf file into categories by a given variable in the clinical metadata file
 splitMafby<-function(clinicalData,by,mafData){
@@ -87,8 +88,6 @@ brcaMAF_brca<-join(brcaMAF_brca,TCGAbrcaMetadata_reduced,type="left")
 
 ggplot(data=brcaMAF_brca,aes(x=Hugo_Symbol,fill=VARIANT_CLASS))+geom_bar()
 ggplot(data=brcaMAF_brca,aes(x=Hugo_Symbol,fill=clinical.race))+geom_bar()
-
-
 
 
 
